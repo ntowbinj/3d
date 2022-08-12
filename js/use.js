@@ -9,7 +9,7 @@ const Pictures = function() {
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
     //const shape = icosahedron();
-    Math.seedrandom('');
+    Math.seedrandom('123');
     const shape = icosahedronMesh({});
     let shapes = [];
     let moving = [];
@@ -20,30 +20,39 @@ const Pictures = function() {
                 if (Math.random() > 0.98) {
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
                     const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
-                    const vertsTrans = shape.verteces
+                    const color = tinycolor.random();
+                    const baseTrans = [i * 10, j * 10, k * 10];
+                    let vertsTrans = shape.verteces
                         .unitaryTransformation(randRot)
                         .scale(s)
-                        .translate([i * 10, j * 10, k * 10]);
-
-                    const color = tinycolor.random();
-                    const newshape = icosahedronMesh({color: color}, id);
-                    newshape.verteces = vertsTrans;
                     id++;
-                    shapes.push(newshape);
-                    moving.push(
-                        [
-                            newshape,
-                            Math.random(),
-                            [Math.random(), Math.random(), Math.random()],
-                            Mat.rotMat(randAngle(), randAngle(), randAngle())
-                        ]
-                    );
+                    if (Math.random() < 0.95) {
+                        vertsTrans = vertsTrans.translate(baseTrans);
+                        const newshape = icosahedronMesh({color: color}, id);
+                        newshape.verteces = vertsTrans;
+                        shapes.push(newshape);
+                    } else {
+                        const newshape = icosahedronMesh({color: color}, id);
+                        newshape.verteces = vertsTrans;
+                        moving.push(
+                            {
+                                shape: newshape,
+                                transRate: Math.random(),
+                                trans: [Math.random(), Math.random(), Math.random()],
+                                rotRate: Math.random(),
+                                randRot: Mat.rotMat(randAngle(), randAngle(), randAngle()),
+                                baseTrans: baseTrans,
+                                color: color
+                            }
+                        );
+                    }
                 }
             }
         }
     }
 
     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
+    const randRot2 = Mat.rotMat(randAngle(), randAngle(), randAngle());
     //const bigOne = icosahedronMesh({color: tinycolor.random()});
     /*
     const vertsTrans = shape.verteces
@@ -52,15 +61,6 @@ const Pictures = function() {
         .translate([-12000, 0, -9000]);
         */
 
-    const vertsTrans = shape.verteces
-        .unitaryTransformation(randRot)
-        .scale(800)
-        .translate([-4000, 0, -4000]);
-    const bigOne = Mesh(
-        vertsTrans,
-        icoTriangles({color: tinycolor('yellow')})
-    );
-    shapes.push(bigOne);
 
 
 
@@ -76,9 +76,42 @@ const Pictures = function() {
 
         draw: function() {
             drawBackground();
-            const allTriangs = logical.getAllTrianglesMeshes(shapes);
+            const allShapes = [];
+            for (var i = 0; i < shapes.length; i++) {
+                allShapes.push(shapes[i]);
+            }
+
+            for (var i = 0; i < moving.length; i++) {
+                const toMove = moving[i];
+                const movedVerts = toMove.shape.verteces.unitaryTransformation(
+                    Mat.counterClockXY(Math.PI * S.t * toMove.rotRate * 50)
+                )
+                    .unitaryTransformation(toMove.randRot)
+                    .translate(Mat.scaleVec(toMove.trans, toMove.transRate * S.t * 1000))
+                    .translate(toMove.baseTrans);
+                const mesh = icosahedronMesh({color: toMove.color}, toMove.shape.id);
+                mesh.verteces = movedVerts;
+                allShapes.push(mesh);
+            }
+            const vertsTrans = shape.verteces
+                .unitaryTransformation(Mat.counterClockXY(10 * sigmoid(S.t * 10 - 5)))
+                .unitaryTransformation(randRot)
+                .unitaryTransformation(Mat.counterClockXY(20 * sigmoid(S.t * 15 - 10)))
+                .unitaryTransformation(randRot2)
+                .unitaryTransformation(Mat.counterClockXY(30 * sigmoid(S.t * 20 - 17)))
+                .unitaryTransformation(randRot)
+                .scale(800)
+                .translate([-4000, 0, -4000]);
+            const bigOne = Mesh(
+                vertsTrans,
+                icoTriangles({color: tinycolor('yellow')})
+            );
+            allShapes.push(bigOne);
+
+            const allTriangs = logical.getAllTrianglesMeshes(allShapes);
             physical.draw(allTriangs);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
+            //const allMoving = logical.
             /*
             for (var i = 0; i < shapes.length; i++) {
                 const shp = shapes[i];
