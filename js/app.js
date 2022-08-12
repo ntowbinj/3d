@@ -114,7 +114,6 @@ const getOrDefault = function(m, k, d) {
 }
 
 const hsvToRgb = function(hsv) {
-    return tinycolor(hsv).toString("rgb");
     return getOrDefault(
         getOrDefault(
             getOrDefault(
