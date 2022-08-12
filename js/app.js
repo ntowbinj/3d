@@ -68,10 +68,12 @@ const init = function() {
     }
     G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
     G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
+    G.timingBuffer = [];
 
 }
 
 const update = function() {
+    const perfNow = window.performance.now();
     const now = Date.now();
     if (S.lastUpdated > 0 && (now - S.lastUpdated < 50)) {
         return;
@@ -79,6 +81,15 @@ const update = function() {
     S.lastUpdated = now;
     updateCamera();
     G.config.update();
+    G.timingBuffer.push(window.performance.now() - perfNow);
+}
+
+const mean = function(arr) {
+    var sum = 0;
+    for (var i = 0; i < arr.length; i++) {
+        sum += arr[i];
+    }
+    return sum / arr.length;
 }
 
 const updateCamera = function() {
@@ -99,13 +110,8 @@ const updateCamera = function() {
         )
     );
     setState('inverseCombinedRotation', Mat.trans(S.combinedRotation));
-    const focDir = Mat.prod(
-        [Mat.scaleVec(basis3.k, -1)],
-        S.combinedRotation
-    )[0];
-    const focVec = Mat.scaleVec(focDir, S.focalLength);
+    const focVec = [0, 0, -1 * S.focalLength];
     const focPoint = Mat.addVec(S.camera_pos, focVec);
-    setState('focVec', focVec);
     setState('focPoint', focPoint);
 }
 
@@ -355,19 +361,22 @@ const in3d = function(v) {
 
 const camera = {
 
-    project: function(pt) {
+    translateAndRotate: function(pt) {
         const camera_pos = S.camera_pos;
-        const ray = Mat.addVec(S.focPoint, Mat.scaleVec(pt, -1));
+        const translated = Mat.subVec(pt, camera_pos);
+        return Mat.prod([translated], S.inverseCombinedRotation)[0];
+    },
 
-        const unrotatedRay = Mat.prod([ray], S.inverseCombinedRotation)[0];
+    project: function(pt) {
+        const ray = Mat.subVec(S.focPoint, this.translateAndRotate(pt));
 
-        if (unrotatedRay[Z] <= 0) {
+        if (ray[Z] <= 0) {
             return null;
         }
 
-        const diffX = unrotatedRay[X] * (S.focalLength / unrotatedRay[Z]);
-        const diffY = unrotatedRay[Y] * (S.focalLength / unrotatedRay[Z]);
-        return [camera_pos[X] + diffX, camera_pos[Y] + diffY, camera_pos[Z]];
+        const diffX = ray[X] * (S.focalLength / ray[Z]);
+        const diffY = ray[Y] * (S.focalLength / ray[Z]);
+        return [diffX, diffY, 0];
     },
 
     uninvert: function(pt) {
@@ -517,7 +526,19 @@ const Mat = {
     },
 
     addVec: function(a, b) {
-        return Mat.add([a], [b])[0];
+        ret = [];
+        for (var i = 0; i < a.length; i++) {
+            ret.push(a[i] + b[i]);
+        }
+        return ret;
+    },
+
+    subVec: function(a, b) {
+        ret = [];
+        for (var i = 0; i < a.length; i++) {
+            ret.push(a[i] - b[i]);
+        }
+        return ret;
     },
 
     scaleVec: function(a, c) {
