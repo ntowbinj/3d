@@ -536,6 +536,11 @@ const Logical = function(
             const withZ = [];
             for (var i = 0; i < meshes.length; i++) {
                 const mesh = meshes[i];
+                /*
+                if (!camera.inViewSphere(Mat.addVec(mesh.verteces.center, mesh.verteces.radiusSquared))) {
+                    continue;
+                }
+                */
                 const verts = mesh.verteces;
                 const triangles = mesh.triangles;
                 const rotatedVerts = Verteces(
@@ -633,6 +638,18 @@ const camera = {
 
     projUninvert: function(pt) {
         return camera.uninvert(camera.project(pt));
+    },
+
+    inViewSphere(center, rSquare) {
+        const p = [Math.abs(S.viewW), Math.abs(S.focalLength)];
+        const c = [Math.abs(center[X]), Math.abs(center[Z])];
+        const det = Mat.det2(p, c);
+        if (det > 0) {
+            return true;
+        }
+        const sqDistP = Mat.dot2d(p, p);
+        const sqDistC = Mat.dot2d(c, c);
+        return (det * det) / sqDistP < rSquare;
     }
 };
 
@@ -669,7 +686,13 @@ const physical = {
         }
         const centerX = G.canvas.width/2;
         const centerY = G.canvas.height/2;
-        return [(centerX + pt[X] * 100), (centerY - pt[Y] * 100), 0]
+        return [(centerX + pt[X] * 100), (centerY - pt[Y] * 100), 0];
+    },
+
+    absToRel: function(pt) {
+        const centerX = G.canvas.width/2;
+        const centerY = G.canvas.height/2;
+        return [(pt[X] - centerX)/100, (pt[Y] - centerY)/100, 0];
     },
 
     inView: function(pt) {
@@ -790,6 +813,8 @@ function anim() {
             setState('cam_x', t * 80);
             setState('cam_y', sigmoid(t * 20 - 15) * 30);
             setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
+            setState('viewW', physical.absToRel([0, 0, 0])[X]);
+            setState('viewH', physical.absToRel([0, 0, 0])[Y]);
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },

@@ -121,6 +121,10 @@ const Mat = {
         return res;
     },
 
+    dot2d: function(v, w) {
+        return (v[0] * w[0]) + (v[1] * w[1]);
+    },
+
     dot: function(v, w) {
         /*
         if (G.collectStats) { // TODO this if slows this down by about 10%
