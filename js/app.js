@@ -701,6 +701,10 @@ const sampleExp = function(lambda, x) {
     return (1/lambda) * Math.log(1 / (1 - x));
 }
 
+const samplePareto = function(x) {
+    return 1 / (Math.pow(x, 1/0.3))
+}
+
 const Pictures = function() {
     const logical = Logical(
         transform = function(v) {
@@ -710,7 +714,7 @@ const Pictures = function() {
     const triang = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
     const triangles = [];
     const traj = [];
-    for (var k = -40; k <= 10; k++) {
+    for (var k = -20; k <= 10; k++) {
         for (var i = -20; i <= 20; i++) {
             for (var j = -20; j <= 20; j++) {
                 if (Math.random() > 0.98) {
@@ -723,7 +727,7 @@ const Pictures = function() {
                             rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
                         }
                     }
-                    const small = Mat.scaleVec(Mat.normed(rand), sampleExp(0.05, Math.random()));
+                    const small = Mat.scaleVec(Mat.normed(rand), samplePareto(Math.random()));
                     traj.push(small);
                 }
             }
