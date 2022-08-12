@@ -114,7 +114,7 @@ const logical = {
         }
         const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
         const norm = Mat.norm(posVec);
-        const lengthRatio = 0.2/(1 + Math.log(1 + norm/5));
+        const lengthRatio = 0.2/(1 + Math.log(1 + norm/2));
         const segment = Mat.scaleVec(posVec, lengthRatio);
         const triangIntersectVec = Mat.addVec(e, Mat.scaleVec(segment, -1));
         const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(Math.PI/2), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
@@ -373,8 +373,72 @@ const Mat = {
     },
 
     orth2: function(theta) {
-        return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]])
+        return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
+    },
+
+    det: function(A) {
+        const shape = Mat.shape(A);
+        if ((shape[0] != 2) || (shape[1] != 2)) {
+            throw new Error("det only supported on 2x2, this is " + shape);
+        }
+        return (A[0][0] * A[1][1]) - (A[0][1] * A[1][0]);
+    },
+
+    cofactors: function(A) {
+        const shape = Mat.shape(A);
+        if ((shape[0] != 2) || (shape[1] != 2)) {
+            throw new Error("det only supported on 2x2, this is " + shape);
+        }
+        return [[A[1][1], -1 * A[1][0]], [-1 * A[0][1], A[0][0]]];
+    },
+
+    inverse: function(A) {
+        const det = Mat.det(A);
+        return Mat.scale(Mat.trans(Mat.cofactors(A)), 1 / det);
     }
+}
+
+const inv = {
+    update: function() {
+        const shiftScale = function(x) {
+            return 2 * (x - 0.5);
+        }
+        const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
+        const B = Mat.trans(Mat.inverse(A));
+        setState('A', A);
+        setState('B', B);
+    },
+
+    init: function() {
+        addInput(
+            getInput('a', 1)
+        );
+        addInput(
+            getInput('b', 0.5)
+        );
+        addInput(
+            getInput('c', 0.5)
+        );
+        addInput(
+            getInput('d', 1)
+        );
+    },
+
+    draw: function() {
+        drawBackground();
+        const axes = getAxes();
+        logical.drawLineList(axes, 0.7);
+        logical.drawLineList(getXTicks(-100, 100, 0.3), 0.7);
+        logical.drawLineList(getYTicks(-100, 100, 0.3), 0.7);
+        for(var i = 0; i < S.A.length; i++) {
+            logical.drawVecOrig(S.A[i], {color: 'orange'});
+        }
+        for(var i = 0; i < S.B.length; i++) {
+            logical.drawVecOrig(S.B[i], {color: 'yellow'});
+        }
+    }
+
+
 }
 
 const euler = {
@@ -420,7 +484,7 @@ const euler = {
 }
 
 const main = function() {
-    G.config = euler;
+    G.config = inv;
     setUpCanvas();
     init();
     update();
