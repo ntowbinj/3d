@@ -9,7 +9,7 @@ const Pictures = function() {
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
     //const shape = icosahedron();
-    Math.seedrandom('2');
+    Math.seedrandom('5');
     const shape = icosahedronMesh({});
     let shapes = [];
     var id = 0;
@@ -42,7 +42,7 @@ const Pictures = function() {
             Mat.prodRecursive(shape.verteces.vertMatrix, randRot),
             1000
         ),
-        [-3000, 0, -4000]
+        [-12000, 0, -9000]
     )
     const bigOne = Mesh(
         Verteces(vertsTrans),
