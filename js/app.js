@@ -5,10 +5,10 @@ COLOR = "color";
 THICK = "thick";
 DASHED = "dashed";
 WIDTH = "width";
+ORTH90 = "orth90";
+ORTH_NEG90 = "orthNeg90";
 
 const G = {};
- 
-var C;
 
 
 const S = {};
@@ -34,6 +34,9 @@ const init = function() {
         getInput('cam_z', 0.3)
     );
     G.config.init();
+    G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
+    G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
+
 }
 
 const update = function() {
@@ -45,9 +48,24 @@ const getAxes = function(l) {
     return [[-1 * l, 0], [l, 0], [0, -1 * l], [0, l]];
 }
 
+const getGrid = function(l) {
+    const ret = [];
+    for (var i = -1 * l; i <= l; i++) {
+        ret.push(
+            [-1 * l, i],
+            [l, i]
+        );
+        ret.push(
+            [i, -1 * l],
+            [i, l]
+        );
+    }
+    return ret;
+}
+
 const getXTicks = function(s, e, l) {
     const result = [];
-    for (var x = s; x < e; x++) {
+    for (var x = s; x <= e; x++) {
         result.push([x, l * -0.5]);
         result.push([x, l * 0.5]);
     }
@@ -55,7 +73,7 @@ const getXTicks = function(s, e, l) {
 }
 
 const getYTicks = function(s, e, l) {
-    const orth = Mat.orth2(Math.PI / 2);
+    const orth = G.orthNeg90;
     return Mat.prod(getXTicks(s, e, l), orth);
 }
 
@@ -129,8 +147,8 @@ const Logical = function(
             const length = 0.1 * (1 + Math.log(4 + norm))
             const segment = Mat.scaleVec(posVec, Math.min(0.4, length/norm));
             const triangIntersectVec = Mat.addVec(e, Mat.scaleVec(segment, -1));
-            const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(Math.PI/2), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
-            const rightAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(-1 * (Math.PI/2)), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
+            const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(G.orthNeg90, Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
+            const rightAdd = Mat.scaleVec(Mat.trans(Mat.prod(G.orth90, Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
             const triang = [
                 e,
                 Mat.addVec(triangIntersectVec, leftAdd),
@@ -462,7 +480,7 @@ const Pictures = function() {
             const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
             const v = A[0];
             const w = A[1];
-            const wOrth = Mat.normed(Mat.prod([w], Mat.trans(Mat.orth2(-1 * Math.PI / 2)))[0]);
+            const wOrth = Mat.normed(Mat.prod([w], G.orthNeg90)[0]);
             const vSheered = Mat.addVec(v, Mat.scaleVec(wOrth, 20 * (S.s - 0.5)));
             A[0] = vSheered;
 
@@ -494,7 +512,9 @@ const Pictures = function() {
             drawBackground();
             const forAx = function(logical) {
                 const axes = getAxes(5);
+                const grid = getGrid(5);
                 logical.drawLineList(axes, 0.7);
+                logical.drawLineList(grid, 0.4);
                 logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
                 logical.drawVecOrig(S.A[0], {color: 'yellow', width: 5});
@@ -504,7 +524,7 @@ const Pictures = function() {
                 const vx = [v[0], 0]
                 const vy = [0, v[1]];
                 const wUnit = Mat.normed(w);
-                const wOrth = Mat.normed(Mat.prod([w], Mat.trans(Mat.orth2(Math.PI / 2)))[0]);
+                const wOrth = Mat.normed(Mat.prod([w], G.orth90)[0]);
                 const projVxWOrth = Mat.proj(vx, wOrth);
                 const projVyW = Mat.proj(vy, w);
                 const projVySummed = Mat.addVec(projVyW, vx);
