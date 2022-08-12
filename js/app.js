@@ -236,7 +236,13 @@ const Logical = function(
         },
 
         physPoint: function(vec) {
-            return physical.relToAbs(camera.projUninvert(in3d(this.transform(vec))));
+            return physical.relToAbs(
+                camera.projUninvert(
+                    this.transform(
+                        in3d(vec)
+                    )
+                )
+            );
         }
     }
 }
@@ -497,6 +503,20 @@ const Mat = {
         return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
     },
 
+    in3dFromXY: function(mat2d) {
+        const shape = Mat.shape(mat2d);
+        if ((shape[0] != 2) || (shape[1] != 2)) {
+            throw new Error("det only supported on 2x2, this is " + shape);
+        }
+        return Mat.mat(
+            [
+                [mat2d[0][0], mat2d[0][1], 0],
+                [mat2d[1][0], mat2d[1][1], 0],
+                [0, 0, 0]
+            ]
+        );
+    },
+
     det: function(A) {
         const shape = Mat.shape(A);
         if ((shape[0] != 2) || (shape[1] != 2)) {
@@ -532,16 +552,16 @@ const main = function() {
 
 const Pictures = function() {
     const trans = function(v) {
-        return Mat.prod([v], Mat.trans(Mat.orth2(S.q_ax * 2 * Math.PI)))[0];
+        return Mat.prod([v], Mat.trans(Mat.in3dFromXY(Mat.orth2(S.q_ax * 2 * Math.PI))))[0];
     }
     const logical1 = Logical(
         transform = function(v) {
-            return Mat.addVec(trans(v), [6, 6]);
+            return Mat.addVec(trans(v), [6, 6, 0]);
         }
     );
     const logical2 = Logical(
         transform = function(v) {
-            return Mat.addVec(trans(v), [-6, -6]);
+            return Mat.addVec(trans(v), [-6, -6, 0]);
         }
     );
     return {
