@@ -552,9 +552,7 @@ const Logical = function(
                         continue;
                     }
                     const midP = midPoint(rotated);
-                    if (midP[Z] > -5000) {
-                        withZ.push([triangle, rotated, opt, midP[Z]]);
-                    }
+                    withZ.push([triangle, rotated, opt, midP[Z]]);
                 }
             }
             return this.sort(withZ);
@@ -784,7 +782,7 @@ function anim() {
     doAnimate(
         function(t) {
             //setState('cam_z', ((1 - t) * 100 - 80));
-            setState('cam_z',   (1 - t) * 200 - 80);
+            setState('cam_z',   (1 - t) * 250 - 150);
             setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2);
             setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
             setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
@@ -795,7 +793,7 @@ function anim() {
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },
-        100,
+        150,
         50
     );
 }

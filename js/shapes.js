@@ -7,13 +7,25 @@ const Mesh = function(verteces, triangles, id = -1) {
 };
 
 const Verteces = function(vertMatrix) {
+    const center = midPoint(vertMatrix);
     return {
         vertMatrix: vertMatrix,
         get: function(i) {
             return this.vertMatrix[i];
-        }
+        },
+        center: center,
+        radius: radius(center, vertMatrix)
     };
 };
+
+const radius = function(center, pts) {
+    let max = 0;
+    for (var i = 0; i < pts.length; i++) {
+        const dist = Mat.norm(Mat.subVec(pts[i], center));
+        max = Math.max(max, dist);
+    }
+    return max;
+}
 
 let triId = 0;
 const Tri = function(vertIdxs, opts) {
