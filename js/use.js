@@ -14,12 +14,12 @@ const Pictures = function() {
     let shapes = [];
     let moving = [];
     var id = 0;
-    for (var k = -50; k <= 1; k++) {
-        for (var i = -30; i <= 5; i++) {
-            for (var j = -10; j <= 10; j++) {
-                if (Math.random() > 0.98) {
+    for (var k = -50; k <= 50; k++) {
+        for (var i = -30; i <= 30; i++) {
+            for (var j = -30; j <= 30; j++) {
+                if (Math.random() > 0.999) {
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
+                    const s = Math.max(5, 4 * samplePareto(.001 + Math.random()));
                     const color = tinycolor.random();
                     const baseTrans = [i * 10, j * 10, k * 10];
                     let vertsTrans = shape.verteces

@@ -57,9 +57,9 @@ const init = function() {
         getInput('cam_z', -200, 200, 40)
     );
     const angleInputs = [
-        'alpha',
-        'beta',
-        'theta',
+        'Rx',
+        'Ry',
+        'Rz',
         /*
         'light_alpha',
         'light_beta',
@@ -135,7 +135,7 @@ const log = {
 
 const updateAndDraw = function() {
     const perfNow = window.performance.now();
-    if (S.lastUpdated > 0 && (perfNow - S.lastUpdated < 10)) {
+    if (S.lastUpdated > 0 && (perfNow - S.lastUpdated < 30)) {
         if (G.collectStats) {
             G.stats['skippedFrameCount'] = (G.stats['skippedFrameCount'] || 0) + 1;
         }
@@ -188,17 +188,13 @@ const difference = function(a) {
 const updateCamera = function() {
     setState('camera_pos', [S.cam_x, S.cam_y, S.cam_z]);
 
-    setState('Rx', Mat.counterClockYZ(S.alpha));
-    setState('Ry', Mat.counterClockXZ(S.beta));
-    setState('Rz', Mat.counterClockXY(S.theta));
-
     setState(
         'combinedRotation',
         Mat.prod(
-            S.Rz,
+                Mat.counterClockXZ(S.Ry),
             Mat.prod(
-                S.Rx,
-                S.Ry
+                Mat.counterClockYZ(S.Rx),
+                Mat.counterClockXY(S.Rz)
             )
         )
     );
@@ -837,9 +833,9 @@ const anOtherAnimation = function(t) {
     //setState('cam_z', ((1 - t) * 100 - 80));
     setState('t', t);
     setState('cam_z',   (1 - sigmoid(5 * t - 3)) * 450 - 300 + (-160 * ramp(60 * t * t * t - 40)));
-    setState('beta', sigmoid(t*15 - 5) * Math.PI * 0.3 );
-    setState('alpha', sigmoid(t*20 - 10) * Math.PI * -0.05);
-    setState('theta', sigmoid(t*20 - 10) * Math.PI * 0.1);
+    setState('Ry', sigmoid(t*15 - 5) * Math.PI * 0.3 );
+    setState('Rx', sigmoid(t*20 - 10) * Math.PI * -0.05);
+    setState('Rz', sigmoid(t*20 - 10) * Math.PI * 0.1);
     setState('cam_x', -150 + sigmoid(t * 5 - 2) * 500 + (-160 * ramp(55 * t * t * t - 30)));
     setState('cam_y', sigmoid(t * 20 - 8) * 20);
     setState('focalLength', 22 - 8 * sigmoid(t * 13 - 7));
