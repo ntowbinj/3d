@@ -122,6 +122,9 @@ const Mat = {
     },
 
     dot: function(v, w) {
+        if (G.collectStats) {
+            G.stats['dotCount'] = (G.stats['dotCount'] || 0) + 1;
+        }
         if (v.length != w.length) {
             throw new Error("can't dot shapes " + v.length + " and " + w.length);
         }

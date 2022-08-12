@@ -95,8 +95,13 @@ const init = function() {
     G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
     G.hsvToRgbCache = {};
     G.timingBuffer = [];
-
+    clearStats();
+    G.collectStats = false;
 };
+
+const clearStats = function() {
+    G.stats = {};
+}
 
 const getOrDefault = function(m, k, d) {
     const result = m[k];
@@ -141,12 +146,18 @@ const updateAndDraw = function() {
     const perfNow = window.performance.now();
     const now = Date.now();
     if (S.lastUpdated > 0 && (now - S.lastUpdated < 50)) {
+        if (G.collectStats) {
+            G.stats['skippedFrameCount'] = (G.stats['skippedFrameCount'] || 0) + 1;
+        }
         return;
     }
     S.lastUpdated = now;
     update();
     draw();
-    G.timingBuffer.push(window.performance.now() - perfNow);
+    if (G.collectStats) {
+        getOrDefault(G.stats, 'timingBuffer', function() { return []; })
+            .push(window.performance.now() - perfNow);
+    }
 }
 
 const update = function() {
@@ -162,6 +173,15 @@ const mean = function(arr) {
         sum += arr[i];
     }
     return sum / arr.length;
+};
+
+const stdev = function(arr) {
+    const mn = mean(arr);
+    var sum = 0;
+    for (var i = 0; i < arr.length; i++) {
+        sum += Math.pow(arr[i], 2);
+    }
+    return (sum / arr.length) - Math.pow(mn, 2);
 };
 
 const updateCamera = function() {
@@ -768,7 +788,7 @@ function anim() {
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },
-        130,
+        600,
         50
     );
 }
