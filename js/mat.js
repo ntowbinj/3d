@@ -250,6 +250,52 @@ const Mat = {
             }
         }
         return false;
+    },
+
+    isVec: function(o) {
+        return typeof(o[0]) === "number";
+    },
+
+    translateRecursive(o, v) {
+        if (this.isVec(o)) {
+            return this.addVec(o, v);
+        }
+        if (!(o.length > 0)) {
+            throw new Error('bad object: ' + o);
+        }
+        const ret = [];
+        for (var i = 0; i < o.length; i++) {
+            ret.push(this.translateRecursive(o[i], v));
+        }
+        return ret;
+    },
+
+    prodRecursive(o, m) {
+        if (this.isVec(o)) {
+            return this.prod([o], m)[0];
+        }
+        if (!(o.length > 0)) {
+            throw new Error('bad object: ' + o);
+        }
+        const ret = [];
+        for (var i = 0; i < o.length; i++) {
+            ret.push(this.prodRecursive(o[i], m));
+        }
+        return ret;
+    },
+
+    scaleRecursive(o, s) {
+        if (this.isVec(o)) {
+            return this.scaleVec(o, s);
+        }
+        if (!(o.length > 0)) {
+            throw new Error('bad object: ' + o);
+        }
+        const ret = [];
+        for (var i = 0; i < o.length; i++) {
+            ret.push(this.scaleRecursive(o[i], s));
+        }
+        return ret;
     }
 };
 

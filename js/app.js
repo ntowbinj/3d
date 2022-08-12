@@ -90,8 +90,37 @@ const init = function() {
     }
     G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
     G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
+    G.hsvToRgbCache = {};
     G.timingBuffer = [];
 
+};
+
+const getOrDefault = function(m, k, d) {
+    const result = m[k];
+    if (result !== undefined) {
+        return result;
+    }
+    const def = d();
+    m[k] = def;
+    return def;
+}
+
+const hsvToRgb = function(hsv) {
+    return getOrDefault(
+        getOrDefault(
+            getOrDefault(
+                G.hsvToRgbCache,
+                Math.floor(hsv.h),
+                function(){return {};}
+            ),
+            Math.floor(hsv.s),
+            function(){return {};}
+        ),
+        Math.floor(10 * hsv.l),
+        function() {
+            return tinycolor(hsv).toString("rgb");
+        }
+    );
 };
 
 const log = {
@@ -404,10 +433,10 @@ const Logical = function(
             }
         },
 
-        drawTriangle: function(orig, proj, oproj = {}) {
-            const options = this.copyOptions(oproj);
+        getTriangle: function(orig, proj, opts = {}) {
+            const options = this.copyOptions(opts);
             if (Mat.hasNull(proj)) {
-                return;
+                return null;
             }
             const a = Mat.subVec(orig[1], orig[0]);
             const b = Mat.subVec(orig[2], orig[0]);
@@ -419,10 +448,11 @@ const Logical = function(
             if (!(ALPHA in options)) {
                 options.alpha = 1.0;
             }
-            const hsv = oproj.color.toHsv();
-            hsv.v = hsv.v * (0.5 + 0.5 * lightDot);
-            options.color = tinycolor(hsv).toString("rgb");
-            physical.drawShape(proj, options.color, options.alpha);
+            const hsv = opts.color.toHsl();
+            hsv.l = hsv.l * (0.5 + 0.5 * lightDot);
+            //options.color = tinycolor(hsv).toString("rgb");
+            options.color = hsvToRgb(hsv);
+            return [proj, options.color, options.alpha];
 
             //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
@@ -458,20 +488,21 @@ const Logical = function(
                 .map(physical.relToAbs);
         },
 
-        drawAllTriangles: function(trngs) {
+        getAllTriangles: function(trngs) {
             const sorted = this.rotateAndDepthSort(trngs);
-
+            const ret = [];
             for (var i = 0; i < sorted.length; i++) {
                 const triang = sorted[i][0];
                 const abs = triang.map(camera.projectRotated)
                     .map(camera.uninvert)
                     .map(physical.relToAbs);
                 const options = sorted[i][1];
-                this.drawTriangle(triang, abs, options);
-                //physical.drawShape(abs, options.color, options.alpha);
-
+                const result = this.getTriangle(triang, abs, options);
+                if (result !== null) {
+                    ret.push(result);
+                }
             }
-
+            return ret;
         },
 
         rotateAndDepthSort: function(trngs) {
@@ -487,6 +518,10 @@ const Logical = function(
                     withZ.push([rotated, opt, midP[Z]]);
                 }
             }
+            return this.sort(withZ);
+        },
+
+        sort: function(withZ) {
             withZ.sort(function(a, b) {
                 if (a[2] < b[2]) {
                     return -1;
@@ -498,7 +533,6 @@ const Logical = function(
             });
 
             return withZ;
-
         },
 
         midPoint: function(shape) {
@@ -600,6 +634,14 @@ const physical = {
         return [(centerX + pt[X] * 100), (centerY - pt[Y] * 100), 0]
     },
 
+    draw: function(triangs) {
+        for (var i = 0; i < triangs.length; i++) {
+            let proj, color, alpha;
+            [proj, color, alpha] = triangs[i];
+            this.drawShape(proj, color, alpha);
+        }
+    },
+
     drawShape: function(pts, color, alpha) {
         for (var i = 0; i < pts.length; i++) {
             if (pts[i] == null) {
@@ -670,26 +712,34 @@ const sigmoid = function(s) {
 }
 
 function anim() {
-    animate(
+    doAnimate(
         function(t) {
-            setState('cam_z', (1 - t) * 800 - 200 * sigmoid(20 * t - 5));
+            setState('cam_z', ((1 - t) * 1000 - 400));
             setState('beta', t * 0.02 * Math.PI * 2 + 2 * sigmoid(t * 40 - 30));
             setState('alpha', t * 0.05 * Math.PI * 2);
             setState('theta', t * 0.05 * Math.PI * 2);
             setState('cam_y', 30 * sigmoid(t * 50 - 25));
             setState('theta', Math.PI * 0.2 * sigmoid(t * 40 - 18));
             setState('cam_x', t * -30);
-            setState('focalLength', 25 - 20 * sigmoid(t * 20 - 11));
-            /*
-            setState('alpha', 0.03 * (300 - n)/300 * Math.PI * 2);
-            setState('theta', 0.02 * (300 - n)/300 * Math.PI * 2);
-            setState('cam_y', 300 - n);
-            */
+            setState('focalLength', 22 - 21 * sigmoid(t * 20 - 11));
+            //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },
-        500,
+        130,
         50
     );
+}
+
+const sampleExp = function(lambda, x) {
+    return (1/lambda) * Math.log(1 / (1 - x));
+}
+
+const samplePareto = function(x) {
+    return 1 / (Math.pow(x, 1/0.3))
+}
+
+const gauss = function(x, d) {
+    return Math.exp((-1 * (x**2) / d));
 }
 
 
