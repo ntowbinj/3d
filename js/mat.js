@@ -169,7 +169,8 @@ const Mat = {
     },
 
     orth2: function(theta) {
-        return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
+        //return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
+        return Mat.mat([[Math.cos(theta), Math.sin(theta)], [-1 * Math.sin(theta), Math.cos(theta)]]);
     },
 
     counterClockXY: function(theta) {
@@ -180,17 +181,17 @@ const Mat = {
 
     counterClockXZ: function(theta) {
         return Mat.mat([
-            [Math.cos(theta), 0, Math.sin(theta)],
+            [Math.cos(theta), 0, -1 * Math.sin(theta)],
             [0, 1, 0],
-            [-1 * Math.sin(theta), 0, Math.cos(theta)]
+            [Math.sin(theta), 0, Math.cos(theta)]
         ]);
     },
 
     counterClockYZ: function(theta) {
         return Mat.mat([
             [1, 0, 0],
-            [0, Math.cos(theta), -1 * Math.sin(theta)],
-            [0, Math.sin(theta), Math.cos(theta)]
+            [0, Math.cos(theta), Math.sin(theta)],
+            [0, -1 * Math.sin(theta), Math.cos(theta)]
         ]);
     },
 
