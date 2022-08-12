@@ -82,9 +82,10 @@ const update = function() {
     }
     S.lastUpdated = now;
     setState('cam_z', 400 * (1 - S.t) - 200);
+    //setState('focalLength', 10 * (1 - S.t) + 0.01);
     setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, S.cam_z]);
 
-    setState('beta', Math.PI / 3 * S.t);
+    setState('beta', Math.PI / 4 * S.t);
     setState('theta', Math.PI / 2 * S.t);
     setState('Rx', Mat.counterClockYZ(S.alpha));
     setState('Ry', Mat.counterClockXZ(S.beta));
@@ -696,6 +697,10 @@ const ofPeriod = function(s) {
     return 2 * Math.PI * s;
 }
 
+const sampleExp = function(lambda, x) {
+    return (1/lambda) * Math.log(1 / (1 - x));
+}
+
 const Pictures = function() {
     const logical = Logical(
         transform = function(v) {
@@ -706,9 +711,9 @@ const Pictures = function() {
     const triangles = [];
     const traj = [];
     for (var k = -40; k <= 10; k++) {
-        for (var i = -10; i <= 10; i++) {
-            for (var j = -10; j <= 10; j++) {
-                if (Math.random() > 0.95) {
+        for (var i = -20; i <= 20; i++) {
+            for (var j = -20; j <= 20; j++) {
+                if (Math.random() > 0.98) {
                     triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 3), p)));
                     let rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
                     // hacky :(
@@ -718,7 +723,7 @@ const Pictures = function() {
                             rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
                         }
                     }
-                    const small = Mat.scaleVec(Mat.normed(rand), Math.exp(2 * Math.random()));
+                    const small = Mat.scaleVec(Mat.normed(rand), sampleExp(0.05, Math.random()));
                     traj.push(small);
                 }
             }
@@ -739,7 +744,7 @@ const Pictures = function() {
             for (var i = 0; i < triangles.length; i++) {
                 const shape = triangles[i];
                 let moved = shape;
-                //const moved = shape.map(pt => Mat.addVec(pt, Mat.scaleVec(traj[i], S.t)));
+                moved = shape.map(pt => Mat.addVec(pt, Mat.scaleVec(traj[i], S.t)));
                 logical.drawShape(moved, {color: this.colors[(i % this.colors.length)]});
             }
         }
