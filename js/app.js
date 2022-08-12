@@ -43,8 +43,7 @@ const triang = function(verts, opts, id = -1) {
 
 const applyDebug = function(name, value) {
     setState(name, value);
-    update();
-    draw();
+    updateAndDraw();
 };
 
 const setState = function(name, value) {
@@ -53,8 +52,10 @@ const setState = function(name, value) {
 
 const handleInputChange = function(name, value) {
     setState(name, value);
-    update();
-    draw();
+    if (G.animate) {
+        return;
+    }
+    updateAndDraw();
 };
 
 const init = function() {
@@ -65,12 +66,15 @@ const init = function() {
         getInput('cam_y', -10, 10, 0)
     );
     addInput(
-        getInput('cam_z', -200, 200, 20)
+        getInput('cam_z', -200, 200, 40)
     );
     const angleInputs = [
         'alpha',
         'beta',
-        'theta'
+        'theta',
+        'light_alpha',
+        'light_beta',
+        'light_theta'
     ];
     for (var i = 0; i < angleInputs.length; i++) {
         addInput(
@@ -78,7 +82,7 @@ const init = function() {
         );
     }
     addInput(
-        getInput('focalLength', 1, 50, 1)
+        getInput('focalLength', 1, 50, 20)
     );
 
     for (var i = 0; i < G.config.inputs.length; i++) {
@@ -100,6 +104,11 @@ const log = {
         }
     }
 };
+
+const updateAndDraw = function() {
+    update();
+    draw();
+}
 
 const update = function() {
     const perfNow = window.performance.now();
@@ -146,7 +155,20 @@ const updateCamera = function() {
 };
 
 const updateLight = function() {
-    setState('lightDir', Mat.normed([-1, -1, -1]));
+    setState(
+        'lightDir',
+        Mat.prod(
+            [[0, 0, -1]],
+            Mat.prod(
+                Mat.counterClockXY(S.light_theta),
+                Mat.prod(
+                    Mat.counterClockYZ(S.light_alpha),
+                    Mat.counterClockXZ(S.light_beta)
+                )
+            )
+        )[0]
+    );
+    //    setState('lightDir', [0, 0, -1]);
 };
 
 const toRange = function(s, e, t) {
@@ -374,21 +396,33 @@ const Logical = function(
             //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
 
-        drawTriangle: function(pts, options = {}) {
-            const a = Mat.subVec(pts[1], pts[0]);
-            const b = Mat.subVec(pts[2], pts[0]);
+        // :(
+        copyOptions: function(options) {
+            return {
+                color: options.color,
+                alpha: options.alpha
+            }
+        },
+
+        drawTriangle: function(orig, proj, oproj = {}) {
+            const options = this.copyOptions(oproj);
+            if (Mat.hasNull(proj)) {
+                return;
+            }
+            const a = Mat.subVec(orig[1], orig[0]);
+            const b = Mat.subVec(orig[2], orig[0]);
             const cross = Mat.normedCross(a, b);
             const lightDot = Mat.dot(cross, S.lightDir);
-            const scaled = 50 + (50 * lightDot);
             if (!(COLOR in options)) {
                 options.color = '#FFF';
             }
             if (!(ALPHA in options)) {
                 options.alpha = 1.0;
             }
-            options.color = tinycolor(options.color).darken(scaled).toString();
-            const physicalPoints = this.physPointList(pts);
-            physical.drawShape(physicalPoints, options.color, options.alpha);
+            const hsv = oproj.color.toHsv();
+            hsv.v = Math.max(0, hsv.v * (0.5 + 0.5 * lightDot));
+            options.color = tinycolor(hsv).toString("rgb");
+            physical.drawShape(proj, options.color, options.alpha);
 
             //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
@@ -433,7 +467,8 @@ const Logical = function(
                     .map(camera.uninvert)
                     .map(physical.relToAbs);
                 const options = sorted[i][1];
-                physical.drawShape(abs, options.color, options.alpha);
+                this.drawTriangle(triang, abs, options);
+                //physical.drawShape(abs, options.color, options.alpha);
 
             }
 
@@ -604,19 +639,41 @@ const drawBackground = function() {
     G.ctx.fillRect(0, 0, canvas.width, canvas.height);
 };
 
+const animate = function(f, n, r) {
+    G.animate = true;
+    if (n == 0) {
+        G.animate = false;
+        return;
+    }
+    f(n);
+    setTimeout(function() {
+        animate(f, n - 1, r)
+    }, r);
+}
 
 const main = function() {
     G.config = new Pictures();
     setUpCanvas();
     init();
-    update();
-    draw();
+    updateAndDraw();
     $("#record").click(startRecording);
-};
+}
 
+function anim() {
+    animate(
+        function(n) {
+            setState('cam_z', n - 100);
+            updateAndDraw();
+        },
+        300,
+        10
+    );
+}
 
 
 function startRecording() {
+    anim();
+    return;
     const chunks = []; // here we will store our recorded media chunks (Blobs)
     const stream = canvas.captureStream(); // grab our canvas MediaStream
     const rec = new MediaRecorder(stream); // init the recorder
@@ -643,6 +700,10 @@ function exportVid(blob) {
 
 window.addEventListener('load', main);
 
+function randAngle() {
+    return Math.random() * 2 * Math.PI;
+}
+
 // TODO delete
 function shuffle(a) {
     var j, x, i;
@@ -654,3 +715,4 @@ function shuffle(a) {
     }
     return a;
 }
+
