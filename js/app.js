@@ -463,13 +463,6 @@ const Logical = function(
                 return null;
             }
 
-            const aProj = Mat.subVec(proj[1], proj[0]);
-            const bProj = Mat.subVec(proj[2], proj[0]);
-            const projCross = Mat.cross(aProj, bProj);
-            if (projCross[Z] < 0) {
-                return null;
-            }
-
             const a = Mat.subVec(orig[1], orig[0]);
             const b = Mat.subVec(orig[2], orig[0]);
             const cross = Mat.normedCross(a, b);
@@ -553,6 +546,14 @@ const Logical = function(
                     const rotated = triangles[j].mat(rotatedVerts);
                     const opt = triangles[j].opts;
                     const midP = this.midPoint(rotated);
+
+                    const aRot = Mat.subVec(rotated[1], rotated[0]);
+                    const bRot = Mat.subVec(rotated[2], rotated[0]);
+                    const rotatedCross = Mat.cross(aRot, bRot);
+                    if (rotatedCross[Z] < 0) {
+                        continue;
+                    }
+
                     if (midP[Z] > -5000) {
                         withZ.push([triangle, rotated, opt, midP[Z]]);
                     }
