@@ -111,9 +111,6 @@ const icosahedronMesh = function(opts, id = -1) {
 
     const triangs = [];
 
-    const bloops = Logical().copyOptions(opts);
-    bloops.color = tinycolor('blue');
-
     triangs.push(Tri([0, 11, 5], opts));
     triangs.push(Tri([0, 5, 1], opts));
     triangs.push(Tri([0, 1, 7], opts));
@@ -124,7 +121,7 @@ const icosahedronMesh = function(opts, id = -1) {
     triangs.push(Tri([11, 10, 2], opts));
     triangs.push(Tri([10, 7, 6], opts));
     triangs.push(Tri([7, 1, 8], opts));
-    triangs.push(Tri([3, 9, 4], bloops));
+    triangs.push(Tri([3, 9, 4], opts));
     triangs.push(Tri([3, 4, 2], opts));
     triangs.push(Tri([3, 2, 6], opts));
     triangs.push(Tri([3, 6, 8], opts));

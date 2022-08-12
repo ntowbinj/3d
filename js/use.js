@@ -1,8 +1,8 @@
 const Pictures = function() {
     const logical = Logical(
         transform = function(v) {
-            return v;
-            //return Mat.prod([v], Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta))[0];
+            //return v;
+            return Mat.prod([v], Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta))[0];
         }
     );
 
@@ -10,7 +10,7 @@ const Pictures = function() {
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
     //const shape = icosahedron();
     Math.seedrandom('2');
-    const shape = icosahedronMesh({color: tinycolor('yellow')});
+    const shape = icosahedronMesh({});
     let shapes = [];
     var id = 0;
     for (var k = -400; k <= 10; k++) {
@@ -26,9 +26,6 @@ const Pictures = function() {
                         ),
                         [i, j, k]
                     );
-                    if (id != 293) {
-                        continue;
-                    }
                     const color = tinycolor.random();
                     const newshapesa = icosahedronMesh({color: color}, id);
                     newshapesa.verteces = Verteces(vertsTrans);
@@ -48,8 +45,8 @@ const Pictures = function() {
         [0, 0, 0]
     )
     bigOne.verteces = Verteces(vertsTrans);
-    shapes = []
-    shapes.push(shape);
+    //shapes = []
+    shapes.push(bigOne);
 
 
 
@@ -64,35 +61,10 @@ const Pictures = function() {
         },
 
         draw: function() {
-            const transRot = Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta);
-            const vertsTrans = Mat.translateRecursive(
-                Mat.scaleRecursive(
-                    Mat.prodRecursive(icosahedronMesh({}).verteces.vertMatrix, transRot),
-                    1
-                ),
-                [0, 0, 0]
-            )
-            //bigOne.verteces = Verteces(vertsTrans);
-            shape.verteces = Verteces(vertsTrans);
-            shapes = []
-            shapes.push(shape);
             drawBackground();
             const allTriangs = logical.getAllTrianglesMeshes(shapes);
             physical.draw(allTriangs);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
-            /*
-            for (var i = 0; i < shapes.length; i++) {
-                const shp = shapes[i];
-                const midp = midPoint(shp.verteces.vertMatrix);
-                logical.text(midp, shp.id);
-            }
-            */
-            const oneShape = shapes[0];
-            for (var i = 0; i < oneShape.triangles.length; i++) {
-                const tr = oneShape.triangles[i];
-                const midp = midPoint(tr.mat(oneShape.verteces));
-                logical.text(midp, tr.id);
-            }
         }
     }
 };
