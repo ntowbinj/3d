@@ -19,15 +19,18 @@ const Pictures = function() {
                 if (Math.random() > 0.99993) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
+                    const s = 0.5 * samplePareto(.001 + Math.random());
                     const vertsTrans = shape.verteces
-                        .unitaryTransformation(randRot)
-                        .scale(0.5 * samplePareto(.001 + Math.random()))
+                    //.unitaryTransformation(randRot)
+                        .scale(s)
                         .translate([i, j, k]);
 
                     const color = tinycolor.random();
-                    const newshapesa = icosahedronMesh({color: color}, id);
-                    newshapesa.verteces = vertsTrans;
-                    shapes.push(newshapesa);
+                    const newshape = icosahedronMesh({color: color}, id);
+                    newshape.verteces = vertsTrans;
+                    if (newshape.id == 149) {
+                        shapes.push(newshape);
+                    }
                 }
             }
         }
@@ -41,15 +44,16 @@ const Pictures = function() {
         .scale(1000)
         .translate([-12000, 0, -9000]);
         */
+
+    shapes = [];
     const vertsTrans = shape.verteces
         .unitaryTransformation(randRot)
-        .scale(2)
-        .translate([0, 0, -10]);
+        .scale(16)
+        .translate([46, 0, -201]);
     const bigOne = Mesh(
         vertsTrans,
         icoTriangles({color: tinycolor('cyan')})
     );
-    //shapes = []
     shapes.push(bigOne);
 
 
@@ -69,6 +73,11 @@ const Pictures = function() {
             const allTriangs = logical.getAllTrianglesMeshes(shapes);
             physical.draw(allTriangs);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
+            for (var i = 0; i < shapes.length; i++) {
+                const shp = shapes[i];
+                const midp = midPoint(shp.verteces.vertMatrix);
+                logical.text(midp, shp.id);
+            }
         }
     }
 };

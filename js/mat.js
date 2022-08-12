@@ -1,22 +1,4 @@
 const Mat = {
-    mat: function(arrs) {
-        const shape = this.shape(arrs);
-        if (isNaN(shape[0]) || isNaN(shape[1])) {
-            throw new Error('bad shape: ' + shape);
-        }
-        var size = arrs[0].length;
-        for (var i = 0; i < arrs.length; i++) {
-            if (arrs[i].length != size) {
-                throw new Error('bad shape');
-            }
-            for (var j = 0; j < arrs[i].length; j++) {
-                if (isNaN(arrs[i][j])) {
-                    throw new Error(arrs[i][j] + ' is NaN');
-                }
-            }
-        }
-        return arrs;
-    },
 
     shape: function(mat) {
         return [mat.length, mat[0].length];
@@ -178,8 +160,7 @@ const Mat = {
     },
 
     orth2: function(theta) {
-        //return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
-        return Mat.mat([[Math.cos(theta), Math.sin(theta)], [-1 * Math.sin(theta), Math.cos(theta)]]);
+        return [[Math.cos(theta), Math.sin(theta)], [-1 * Math.sin(theta), Math.cos(theta)]];
     },
 
     counterClockXY: function(theta) {
@@ -189,19 +170,19 @@ const Mat = {
     },
 
     counterClockXZ: function(theta) {
-        return Mat.mat([
+        return [
             [Math.cos(theta), 0, -1 * Math.sin(theta)],
             [0, 1, 0],
             [Math.sin(theta), 0, Math.cos(theta)]
-        ]);
+        ];
     },
 
     counterClockYZ: function(theta) {
-        return Mat.mat([
+        return [
             [1, 0, 0],
             [0, Math.cos(theta), Math.sin(theta)],
             [0, -1 * Math.sin(theta), Math.cos(theta)]
-        ]);
+        ];
     },
 
     rotMat: function(alpha, beta, theta) {
@@ -222,13 +203,11 @@ const Mat = {
         if ((shape[0] != 2) || (shape[1] != 2)) {
             throw new Error("det only supported on 2x2, this is " + shape);
         }
-        return Mat.mat(
-            [
-                [mat2d[0][0], mat2d[0][1], 0],
-                [mat2d[1][0], mat2d[1][1], 0],
-                [0, 0, 0]
-            ]
-        );
+        return [
+            [mat2d[0][0], mat2d[0][1], 0],
+            [mat2d[1][0], mat2d[1][1], 0],
+            [0, 0, 0]
+        ];
     },
 
     det2: function(A) {

@@ -540,6 +540,7 @@ const Logical = function(
             for (var i = 0; i < meshes.length; i++) {
                 const mesh = meshes[i];
                 if (!camera.inViewSphere(camera.rotate(camera.translate(mesh.verteces.center)), mesh.verteces.radiusSquared)) {
+                    console.log('out of view');
                     continue;
                 }
                 const verts = mesh.verteces;
@@ -619,8 +620,9 @@ const camera = {
             return null;
         }
 
-        const diffX = ray[X] * (S.focalLength / ray[Z]);
-        const diffY = ray[Y] * (S.focalLength / ray[Z]);
+        const focalLength = S.focalLength;
+        const diffX = ray[X] * (focalLength / ray[Z]);
+        const diffY = ray[Y] * (focalLength / ray[Z]);
         const ret = [diffX, diffY, 0];
         return ret;
     },
@@ -645,12 +647,12 @@ const camera = {
     inViewSphere(center, rSquare) {
         const px = S.viewPX;
         const cx = [Math.abs(center[X]), Math.abs(center[Z])];
-        if (!this.inViewDir(px, cx)) {
+        if (!this.inViewDir(px, cx, rSquare)) {
             return false;
         }
         const py = S.viewPY;
         const cy = [Math.abs(center[Y]), Math.abs(center[Z])];
-        return this.inViewDir(py, cy);
+        return this.inViewDir(py, cy, rSquare);
 
     },
 
@@ -660,8 +662,8 @@ const camera = {
             return true;
         }
         const sqDistP = Mat.dot2d(p, p);
-        const sqDistC = Mat.dot2d(c, c);
-        return (det * det) / sqDistP < rSquare;
+        const sqPerpToView = (det * det) / sqDistP; 
+        return sqPerpToView < rSquare;
     }
 };
 
@@ -746,9 +748,11 @@ const physical = {
                 outOfViewCount++;
             }
         }
+            /*
         if (outOfViewCount === pts.length) {
             return;
         }
+        */
         G.ctx.strokeStyle = color;
         G.ctx.fillStyle = color;
         G.ctx.globalAlpha = alpha;
@@ -824,8 +828,7 @@ function anim() {
             //setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
             setState('cam_x', t * 80);
             setState('cam_y', sigmoid(t * 20 - 15) * 30);
-            setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
-            //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
+            //setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
             updateAndDraw();
         },
         250,
