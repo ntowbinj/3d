@@ -106,22 +106,22 @@ const log = {
 };
 
 const updateAndDraw = function() {
-    update();
-    draw();
-}
-
-const update = function() {
     const perfNow = window.performance.now();
     const now = Date.now();
     if (S.lastUpdated > 0 && (now - S.lastUpdated < 50)) {
         return;
     }
     S.lastUpdated = now;
+    update();
+    draw();
+    G.timingBuffer.push(window.performance.now() - perfNow);
+}
+
+const update = function() {
     updateCamera();
     updateLight();
     G.config.update();
     log.debug(S);
-    G.timingBuffer.push(window.performance.now() - perfNow);
 };
 
 const mean = function(arr) {
@@ -412,7 +412,7 @@ const Logical = function(
             const a = Mat.subVec(orig[1], orig[0]);
             const b = Mat.subVec(orig[2], orig[0]);
             const cross = Mat.normedCross(a, b);
-            const lightDot = Mat.dot(cross, S.lightDir);
+            const lightDot = Math.abs(Mat.dot(cross, S.lightDir));
             if (!(COLOR in options)) {
                 options.color = '#FFF';
             }
@@ -420,7 +420,7 @@ const Logical = function(
                 options.alpha = 1.0;
             }
             const hsv = oproj.color.toHsv();
-            hsv.v = Math.max(0, hsv.v * (0.5 + 0.5 * lightDot));
+            hsv.v = hsv.v * (0.5 + 0.5 * lightDot);
             options.color = tinycolor(hsv).toString("rgb");
             physical.drawShape(proj, options.color, options.alpha);
 
@@ -483,7 +483,9 @@ const Logical = function(
                     .map(camera.translate)
                     .map(camera.rotate);
                 const midP = this.midPoint(rotated);
-                withZ.push([rotated, opt, midP[Z]]);
+                if (midP[Z] > -500) {
+                    withZ.push([rotated, opt, midP[Z]]);
+                }
             }
             withZ.sort(function(a, b) {
                 if (a[2] < b[2]) {
@@ -639,16 +641,20 @@ const drawBackground = function() {
     G.ctx.fillRect(0, 0, canvas.width, canvas.height);
 };
 
-const animate = function(f, n, r) {
+const animate = function(f, n, k, r) {
     G.animate = true;
-    if (n == 0) {
+    if (k == n) {
         G.animate = false;
         return;
     }
-    f(n);
+    f(k/n);
     setTimeout(function() {
-        animate(f, n - 1, r)
+        animate(f, n, k + 1, r)
     }, r);
+}
+
+const doAnimate = function(f, n, r) {
+    animate(f, n, 0, r);
 }
 
 const main = function() {
@@ -659,14 +665,30 @@ const main = function() {
     $("#record").click(startRecording);
 }
 
+const sigmoid = function(s) {
+    return 1 / (1 + Math.exp(-1 * s));
+}
+
 function anim() {
     animate(
-        function(n) {
-            setState('cam_z', n - 100);
+        function(t) {
+            setState('cam_z', (1 - t) * 800 - 200 * sigmoid(20 * t - 5));
+            setState('beta', t * 0.02 * Math.PI * 2 + 2 * sigmoid(t * 40 - 30));
+            setState('alpha', t * 0.05 * Math.PI * 2);
+            setState('theta', t * 0.05 * Math.PI * 2);
+            setState('cam_y', 30 * sigmoid(t * 50 - 25));
+            setState('theta', Math.PI * 0.2 * sigmoid(t * 40 - 18));
+            setState('cam_x', t * -30);
+            setState('focalLength', 25 - 20 * sigmoid(t * 20 - 11));
+            /*
+            setState('alpha', 0.03 * (300 - n)/300 * Math.PI * 2);
+            setState('theta', 0.02 * (300 - n)/300 * Math.PI * 2);
+            setState('cam_y', 300 - n);
+            */
             updateAndDraw();
         },
-        300,
-        10
+        500,
+        50
     );
 }
 
