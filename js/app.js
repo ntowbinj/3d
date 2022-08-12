@@ -195,7 +195,8 @@ const updateCamera = function() {
     setState('inverseCombinedRotation', Mat.trans(S.combinedRotation));
     const focPoint = [0, 0, -1 * S.focalLength];
     setState('focPoint', focPoint);
-    setState('viewW', physical.absToRel([0, 0, 0])[X]);
+    setState('viewPX', [Math.abs(physical.absToRel([0, 0, 0])[X]), S.focalLength]);
+    setState('viewPY', [Math.abs(physical.absToRel([0, 0, 0])[Y]), S.focalLength]);
     setState('viewH', physical.absToRel([0, 0, 0])[Y]);
 };
 
@@ -641,9 +642,20 @@ const camera = {
         return camera.uninvert(camera.project(pt));
     },
 
+
     inViewSphere(center, rSquare) {
-        const p = [Math.abs(S.viewW), Math.abs(S.focalLength)];
-        const c = [Math.abs(center[X]), Math.abs(center[Z])];
+        const px = S.viewPX;
+        const cx = [Math.abs(center[X]), Math.abs(center[Z])];
+        if (!this.inViewDir(px, cx)) {
+            return false;
+        }
+        const py = S.viewPY;
+        const cy = [Math.abs(center[Y]), Math.abs(center[Z])];
+        return this.inViewDir(py, cy);
+
+    },
+
+    inViewDir(p, c, rSquare) {
         const det = Mat.det2([p, c]);
         if (det > 0) {
             return true;
