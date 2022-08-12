@@ -240,6 +240,16 @@ const Mat = {
     normedCross: function(a, b) {
         const cross = this.cross(a, b);
         return this.scaleVec(cross, 1 / this.norm(cross));
+    },
+
+    // TODO bad
+    hasNull: function(m) {
+        for (var i = 0; i < m.length; i++) {
+            if (m[i] == null) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 
