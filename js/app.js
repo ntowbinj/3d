@@ -9,6 +9,17 @@ const ALPHA = "alpha";
 const ORTH90 = "orth90";
 const ORTH_NEG90 = "orthNeg90";
 
+const basis2 = {
+    i: [1, 0],
+    j: [0, 1]
+};
+
+const basis3 = {
+    i: [1, 0, 0],
+    j: [0, 1, 0],
+    k: [0, 0, 1]
+}
+
 const X = 0;
 const Y = 1;
 const Z = 2;
@@ -38,6 +49,20 @@ const init = function() {
     addInput(
         get01Input('cam_z', 0.4)
     );
+    const angleInputs = [
+        'alpha',
+        'beta',
+        'theta'
+    ];
+    for (var i = 0; i < angleInputs.length; i++) {
+        addInput(
+            getInput(angleInputs[i], 0, Math.PI * 2, 0)
+        );
+    }
+    addInput(
+        getInput('focalLength', 0.1, 5, 1)
+    );
+
     for (var i = 0; i < G.config.inputs.length; i++) {
         addInput(G.config.inputs[i]);
     }
@@ -48,6 +73,11 @@ const init = function() {
 
 const update = function() {
     setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9]);
+
+    setState('Rx', Mat.counterClockYZ(S.alpha));
+    setState('Ry', Mat.counterClockXZ(S.beta));
+    setState('Rz', Mat.counterClockXY(S.theta));
+
     G.config.update();
 }
 
@@ -61,6 +91,14 @@ const fromRange = function(s, e, t) {
 
 const getAxes = function(l) {
     return [[-1 * l, 0], [l, 0], [0, -1 * l], [0, l]];
+}
+
+const getAxes3d = function(l) {
+    return [
+        [-1 * l, 0, 0], [l, 0, 0],
+        [0, -1 * l, 0], [0, l, 0],
+        [0, 0, -1 * l], [0, 0, l]
+    ];
 }
 
 const getSquare = function(l) {
@@ -80,6 +118,14 @@ const getGrid = function(l) {
         );
     }
     return ret;
+}
+
+const getTicks3d = function(s, e, l) {
+    const ret = [];
+    const xticks = in3d(
+        getXTicks(s, e, l)
+    );
+
 }
 
 const getXTicks = function(s, e, l) {
@@ -160,7 +206,13 @@ const Logical = function(
             if (!(COLOR in options)) {
                 options[COLOR] = 'cyan';
             }
-            this.drawVec([0, 0], v, options);
+            let origin;
+            if (v.length == 2) {
+                origin = [0, 0];
+            } else {
+                origin = [0, 0, 0];
+            }
+            this.drawVec(origin, v, options);
         },
 
         drawVec: function(s, e, options = {}) {
@@ -170,13 +222,22 @@ const Logical = function(
             if (!(WIDTH  in options)) {
                 options[WIDTH] = 5;
             }
+            let orth90;
+            let orthNeg90;
+            if (s.length == 2) {
+                orth90 = G.orth90;
+                orthNeg90 = G.orthNeg90;
+            } else {
+                orth90 = Mat.in3dFromXY(G.orth90);
+                orthNeg90 = Mat.in3dFromXY(G.orthNeg90);
+            }
             const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
             const norm = Mat.norm(posVec);
             const length = 0.1 * (1 + Math.log(4 + norm))
             const segment = Mat.scaleVec(posVec, Math.min(0.4, length/norm));
             const triangIntersectVec = Mat.addVec(e, Mat.scaleVec(segment, -1));
-            const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(G.orthNeg90, Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
-            const rightAdd = Mat.scaleVec(Mat.trans(Mat.prod(G.orth90, Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
+            const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(orthNeg90, Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
+            const rightAdd = Mat.scaleVec(Mat.trans(Mat.prod(orth90, Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
             const triang = [
                 e,
                 Mat.addVec(triangIntersectVec, leftAdd),
@@ -261,13 +322,27 @@ const camera = {
 
     project: function(pt) {
         const camera_pos = S.camera_pos;
-        ray_x = camera_pos[X] - pt[X];
-        ray_y = camera_pos[Y] - pt[Y];
-        ray_z = camera_pos[Z] - pt[Z];
-        diff_x = ray_x / ray_z;
-        diff_y = ray_y / ray_z;
-        ray_z = 1;
-        return [S.camera_pos[X] + diff_x, S.camera_pos[Y] + diff_y, S.camera_pos[Z] + 1];
+        const combinedRotation = Mat.prod(
+            S.Rz,
+            Mat.prod(
+                S.Rx,
+                S.Ry
+            )
+        );
+        const inverseCombinedRotation = Mat.trans(combinedRotation);
+        const focDir = Mat.prod(
+            [Mat.scaleVec(basis3.k, -1)],
+            combinedRotation
+        )[0];
+        const focVec = Mat.scaleVec(focDir, S.focalLength);
+        const focPoint = Mat.addVec(camera_pos, focVec);
+        const ray = Mat.addVec(focPoint, Mat.scaleVec(pt, -1));
+
+        const unrotatedRay = Mat.prod([ray], inverseCombinedRotation)[0];
+
+        const diffX = unrotatedRay[X] * (S.focalLength / unrotatedRay[Z]);
+        const diffY = unrotatedRay[Y] * (S.focalLength / unrotatedRay[Z]);
+        return [S.camera_pos[X] + diffX, S.camera_pos[Y] + diffY, S.camera_pos[Z]];
     },
 
     uninvert: function(pt) {
@@ -347,6 +422,10 @@ const drawBackground = function() {
 
 const Mat = {
     mat: function(arrs) {
+        const shape = this.shape(arrs);
+        if (isNaN(shape[0]) || isNaN(shape[1])) {
+            throw new Error('bad shape: ' + shape);
+        }
         var size = arrs[0].length;
         for (var i = 0; i < arrs.length; i++) {
             if (arrs[i].length != size) {
@@ -503,6 +582,28 @@ const Mat = {
         return Mat.mat([[Math.cos(theta), -1 * Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
     },
 
+    counterClockXY: function(theta) {
+        const in3d = Mat.in3dFromXY(Mat.orth2(theta));
+        in3d[2][2] = 1;
+        return in3d;
+    },
+
+    counterClockXZ: function(theta) {
+        return Mat.mat([
+            [Math.cos(theta), 0, Math.sin(theta)],
+            [0, 1, 0],
+            [-1 * Math.sin(theta), 0, Math.cos(theta)]
+        ]);
+    },
+
+    counterClockYZ: function(theta) {
+        return Mat.mat([
+            [1, 0, 0],
+            [0, Math.cos(theta), -1 * Math.sin(theta)],
+            [0, Math.sin(theta), Math.cos(theta)]
+        ]);
+    },
+
     in3dFromXY: function(mat2d) {
         const shape = Mat.shape(mat2d);
         if ((shape[0] != 2) || (shape[1] != 2)) {
@@ -550,84 +651,60 @@ const main = function() {
     $("#record").click(startRecording);
 }
 
+const ofPeriod = function(s) {
+    return 2 * Math.PI * s;
+}
+
 const Pictures = function() {
-    const trans = function(v) {
-        return Mat.prod([v], Mat.trans(Mat.in3dFromXY(Mat.orth2(S.q_ax * 2 * Math.PI))))[0];
-    }
-    const logical1 = Logical(
+    const logical = Logical(
         transform = function(v) {
-            return Mat.addVec(trans(v), [6, 6, 0]);
-        }
-    );
-    const logical2 = Logical(
-        transform = function(v) {
-            return Mat.addVec(trans(v), [-6, -6, 0]);
+            return v;
         }
     );
     return {
 
         inputs: [
-            get01Input('a', 1),
-            get01Input('b', 0.5),
-            get01Input('c', 0.5),
-            get01Input('d', 1),
-            get01Input('s', 0.5),
-            get01Input('q', 0),
+            getInput('a', -5, 5, 1),
+            getInput('b', -5, 5, 0),
+            getInput('c', -5, 5, 0),
+
+            getInput('d', -5, 5, 0),
+            getInput('e', -5, 5, 1),
+            getInput('f', -5, 5, 0),
+
+            getInput('g', -5, 5, 0),
+            getInput('h', -5, 5, 0),
+            getInput('i', -5, 5, 1),
             get01Input('q_ax', 0)
         ],
 
         update: function() {
-            const shiftScale = function(x) {
-                return 10 * (x - 0.5);
-            }
-            const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
-            const v = A[0];
-            const w = A[1];
-            const wOrth = Mat.normed(Mat.prod([w], G.orthNeg90)[0]);
-            const vSheered = Mat.addVec(v, Mat.scaleVec(wOrth, 20 * (S.s - 0.5)));
-            A[0] = vSheered;
-
+            const A = Mat.mat([
+                [S.a, S.b, S.c],
+                [S.d, S.e, S.f],
+                [S.g, S.h, S.i]
+            ]);
             setState('A', A);
         },
 
         draw: function() {
             drawBackground();
-            const go = function(log, A, c1, c2) {
-                const axes = getAxes(5);
-                const grid = getGrid(5);
-                log.drawLineList(axes, 0.7);
-                //log.drawLineList(grid, 0.4);
-                log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
-                log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                log.drawVecOrig(A[0], {color: c1, width: 5});
-                log.drawVecOrig(A[1], {color: c2});
-                const v = A[0]
-                const w = A[1]
-                const vx = [v[0], 0]
-                const vy = [0, v[1]];
-                const wUnit = Mat.normed(w);
-                const wOrth = Mat.normed(Mat.prod([w], G.orth90)[0]);
-                const wGrid = Mat.prod(grid, [wUnit, Mat.prod([wUnit], G[ORTH90])[0]]);
-                log.drawLineList(wGrid, 0.3, {color: c2});
-                const projVxWOrth = Mat.proj(vx, wOrth);
-                const projVxW = Mat.proj(vx, w);
-                const projVyW = Mat.proj(vy, w);
-                const projVySummed = Mat.addVec(projVyW, vx);
-                const projVW = Mat.proj(v, w);
-                log.drawDashedLine(Mat.scaleVec(w, 10), Mat.scaleVec(w, -10), 1, {color: c2});
-                //log.drawDashedLine(v, vx, 1);
-                log.drawVecOrig(vx, {color: c1, width: 1.5});
-                log.drawVec(vx, v, {color: c1, width: 1.5});
-                log.drawDashedLine([0, 0], projVxWOrth, 1);
-                log.drawDashedLine(projVxWOrth, vx, 1);
-                log.drawDashedLine(projVxW, vx, 1);
-                log.drawDashedLine(vx, projVySummed, 1);
-                log.drawDashedLine(v, projVySummed, 1);
-                log.drawDashedLine(projVW, v, 1);
+            const go = function(log, A) {
+                const squareFace = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]];
+                logical.drawShape(
+                    Mat.prod(squareFace, Mat.counterClockXZ(-1 * Math.PI / 2)), {color: 'green'}
+                );
+                logical.drawShape(
+                    Mat.prod(squareFace, Mat.counterClockYZ(Math.PI / 2)), {color: 'red'}
+                );
+                logical.drawShape(
+                    Mat.prod(squareFace, Mat.counterClockXZ(-1 * Math.PI / 2)).map(pt => Mat.addVec(basis3.i, pt)), {color: 'blue'}
+                );
+                logical.drawShape(
+                    squareFace, {color: 'yellow'}
+                );
             }
-            const A = Mat.prod(S.A, Mat.trans(Mat.orth2(2 * Math.PI * S.q)));
-            go(logical1, A, 'yellow', 'orange');
-            go(logical2, [A[1], A[0]], 'orange', 'yellow');
+            go(logical, S.A);
         }
     }
 }
