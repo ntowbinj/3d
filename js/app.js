@@ -47,7 +47,7 @@ const init = function() {
         get01Input('cam_y', 0.5)
     );
     addInput(
-        get01Input('cam_z', 0.4)
+        getInput('cam_z', -100, 100, 20)
     );
     const angleInputs = [
         'alpha',
@@ -56,11 +56,11 @@ const init = function() {
     ];
     for (var i = 0; i < angleInputs.length; i++) {
         addInput(
-            getInput(angleInputs[i], 0, Math.PI * 2, 0)
+            getInput(angleInputs[i], Math.PI * (-1), Math.PI * 1, 0)
         );
     }
     addInput(
-        getInput('focalLength', 0.1, 5, 1)
+        getInput('focalLength', 0.01, 50, 1)
     );
 
     for (var i = 0; i < G.config.inputs.length; i++) {
@@ -72,11 +72,24 @@ const init = function() {
 }
 
 const update = function() {
-    setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9]);
+    //setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(4 * S.cam_z) - 0.9]);
+    setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, S.cam_z]);
 
     setState('Rx', Mat.counterClockYZ(S.alpha));
     setState('Ry', Mat.counterClockXZ(S.beta));
     setState('Rz', Mat.counterClockXY(S.theta));
+
+    setState(
+        'combinedRotation',
+        Mat.prod(
+            S.Rz,
+            Mat.prod(
+                S.Rx,
+                S.Ry
+            )
+        )
+    );
+    setState('inverseCombinedRotation', Mat.trans(S.combinedRotation));
 
     G.config.update();
 }
@@ -314,35 +327,27 @@ const in3d = function(v) {
     } else if (v.length == 3) {
         return v;
     } else {
-        throw new Error('must be 2d or 3d');
+        throw new Error('must be 2d or 3d, got ' + v);
     }
 }
 
 const camera = {
 
     project: function(pt) {
-        const camera_pos = S.camera_pos;
-        const combinedRotation = Mat.prod(
-            S.Rz,
-            Mat.prod(
-                S.Rx,
-                S.Ry
-            )
-        );
-        const inverseCombinedRotation = Mat.trans(combinedRotation);
         const focDir = Mat.prod(
             [Mat.scaleVec(basis3.k, -1)],
-            combinedRotation
+            S.combinedRotation
         )[0];
         const focVec = Mat.scaleVec(focDir, S.focalLength);
+        const camera_pos = S.camera_pos;
         const focPoint = Mat.addVec(camera_pos, focVec);
         const ray = Mat.addVec(focPoint, Mat.scaleVec(pt, -1));
 
-        const unrotatedRay = Mat.prod([ray], inverseCombinedRotation)[0];
+        const unrotatedRay = Mat.prod([ray], S.inverseCombinedRotation)[0];
 
         const diffX = unrotatedRay[X] * (S.focalLength / unrotatedRay[Z]);
         const diffY = unrotatedRay[Y] * (S.focalLength / unrotatedRay[Z]);
-        return [S.camera_pos[X] + diffX, S.camera_pos[Y] + diffY, S.camera_pos[Z]];
+        return [camera_pos[X] + diffX, camera_pos[Y] + diffY, camera_pos[Z]];
     },
 
     uninvert: function(pt) {
@@ -416,7 +421,7 @@ const setUpCanvas = function() {
 
 const drawBackground = function() {
     G.ctx.globalAlpha = 1;
-    G.ctx.fillStyle = COLORS.background;
+    G.ctx.fillStyle = 'black';//COLORS.background;
     G.ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -661,50 +666,33 @@ const Pictures = function() {
             return v;
         }
     );
+    const triang = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
+    const triangles = [];
+    for (var i = -10; i <= 10; i++) {
+        for (var j = -10; j <= 10; j++) {
+            for (var k = -10; k <= 10; k++) {
+                //if (Math.random() > 0.95) {
+                    triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 3), p)));
+                //}
+            }
+        }
+    }
     return {
 
         inputs: [
-            getInput('a', -5, 5, 1),
-            getInput('b', -5, 5, 0),
-            getInput('c', -5, 5, 0),
-
-            getInput('d', -5, 5, 0),
-            getInput('e', -5, 5, 1),
-            getInput('f', -5, 5, 0),
-
-            getInput('g', -5, 5, 0),
-            getInput('h', -5, 5, 0),
-            getInput('i', -5, 5, 1),
-            get01Input('q_ax', 0)
         ],
 
         update: function() {
-            const A = Mat.mat([
-                [S.a, S.b, S.c],
-                [S.d, S.e, S.f],
-                [S.g, S.h, S.i]
-            ]);
-            setState('A', A);
         },
+
+        colors: ['yellow', 'red', 'blue', 'orange', 'green', 'white'],
 
         draw: function() {
             drawBackground();
-            const go = function(log, A) {
-                const squareFace = [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]];
-                logical.drawShape(
-                    Mat.prod(squareFace, Mat.counterClockXZ(-1 * Math.PI / 2)), {color: 'green'}
-                );
-                logical.drawShape(
-                    Mat.prod(squareFace, Mat.counterClockYZ(Math.PI / 2)), {color: 'red'}
-                );
-                logical.drawShape(
-                    Mat.prod(squareFace, Mat.counterClockXZ(-1 * Math.PI / 2)).map(pt => Mat.addVec(basis3.i, pt)), {color: 'blue'}
-                );
-                logical.drawShape(
-                    squareFace, {color: 'yellow'}
-                );
+            for (var i = 0; i < triangles.length; i++) {
+            logical.drawShape(triangles[i], {color: this.colors[(i % this.colors.length)]});
             }
-            go(logical, S.A);
+            //logical.drawShape(triang);
         }
     }
 }
