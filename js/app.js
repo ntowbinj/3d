@@ -138,14 +138,18 @@ const logical = {
         if (!(COLOR in options)) {
             options[COLOR] = '#FFF';
         }
-        physical.drawLineAbs(physical.relToAbs(vecToPoint(s)), physical.relToAbs(vecToPoint(e)), options.color);
+        physical.drawLineAbs(logical.physPoint(s), logical.physPoint(e), options.color);
     },
 
     drawShape: function(pts, options = {}) {
         if (!(COLOR in options)) {
             options[COLOR] = '#FFF';
         }
-        physical.drawShape(pts.map(pt => physical.relToAbs(vecToPoint(pt))), options.color);
+        physical.drawShape(pts.map(pt => logical.physPoint(pt)), options.color);
+    },
+
+    physPoint: function(vec) {
+        return physical.relToAbs(camera.projUninvert(vecToPoint(vec)));
     }
 }
 
@@ -163,6 +167,10 @@ const camera = {
 
     uninvert: function(pt) {
         return getPoint(-1 * pt.x, -1 * pt.y, pt.z);
+    },
+
+    projUninvert: function(pt) {
+        return camera.uninvert(camera.project(pt));
     }
 }
 
@@ -191,12 +199,11 @@ const physical = {
     },
 
     relToAbs: function(pt) {
-        const camPoint = camera.uninvert(camera.project(pt));
         const centerX = G.canvas.width/2;
         const centerY = G.canvas.height/2;
         return {
-            'x': (centerX + camPoint.x * 100),
-            'y': (centerY - camPoint.y * 100)
+            'x': (centerX + pt.x * 100),
+            'y': (centerY - pt.y * 100)
         };
     },
 
