@@ -1,13 +1,17 @@
 const COLORS = {
     'background': '#611'
 }
-COLOR = "color";
-THICK = "thick";
-DASHED = "dashed";
-WIDTH = "width";
-ALPHA = "alpha";
-ORTH90 = "orth90";
-ORTH_NEG90 = "orthNeg90";
+const COLOR = "color";
+const THICK = "thick";
+const DASHED = "dashed";
+const WIDTH = "width";
+const ALPHA = "alpha";
+const ORTH90 = "orth90";
+const ORTH_NEG90 = "orthNeg90";
+
+const X = 0;
+const Y = 1;
+const Z = 2;
 
 const G = {};
 
@@ -43,7 +47,7 @@ const init = function() {
 }
 
 const update = function() {
-    setState('camera_pos', getPoint((S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9));
+    setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9]);
     G.config.update();
 }
 
@@ -228,29 +232,40 @@ const Logical = function(
         },
 
         physWidth: function(w, options) {
-            return options.thick ? this.transformWidth(Math.max(1.5, w * (1/S.camera_pos.z))) : w;
+            return options.thick ? this.transformWidth(Math.max(1.5, w * (1/S.camera_pos[Z]))) : w;
         },
 
         physPoint: function(vec) {
-            return physical.relToAbs(camera.projUninvert(vecToPoint(this.transform(vec))));
+            return physical.relToAbs(camera.projUninvert(in3d(this.transform(vec))));
         }
+    }
+}
+
+const in3d = function(v) {
+    if (v.length == 2) {
+        return [v[X], v[Y], 0];
+    } else if (v.length == 3) {
+        return v;
+    } else {
+        throw new Error('must be 2d or 3d');
     }
 }
 
 const camera = {
 
     project: function(pt) {
-        ray_x = S.camera_pos.x - pt.x;
-        ray_y = S.camera_pos.y - pt.y;
-        ray_z = S.camera_pos.z - pt.z;
+        const camera_pos = S.camera_pos;
+        ray_x = camera_pos[X] - pt[X];
+        ray_y = camera_pos[Y] - pt[Y];
+        ray_z = camera_pos[Z] - pt[Z];
         diff_x = ray_x / ray_z;
         diff_y = ray_y / ray_z;
         ray_z = 1;
-        return getPoint(S.camera_pos.x + diff_x, S.camera_pos.y + diff_y, S.camera_pos.z + 1);
+        return [S.camera_pos[X] + diff_x, S.camera_pos[Y] + diff_y, S.camera_pos[Z] + 1];
     },
 
     uninvert: function(pt) {
-        return getPoint(-1 * pt.x, -1 * pt.y, pt.z);
+        return [-1 * pt[X], -1 * pt[Y], pt[Z]];
     },
 
     projUninvert: function(pt) {
@@ -273,22 +288,19 @@ const physical = {
         G.ctx.beginPath();
         const fixedS = physical.fixPointForCanvas(s);
         const fixedE = physical.fixPointForCanvas(e);
-        G.ctx.moveTo(fixedS.x, fixedS.y);
-        G.ctx.lineTo(fixedE.x, fixedE.y);
+        G.ctx.moveTo(fixedS[X], fixedS[Y]);
+        G.ctx.lineTo(fixedE[X], fixedE[Y]);
         G.ctx.stroke();
     },
 
     fixPointForCanvas: function(pt) {
-        return getPoint(pt.x + 0.5, pt.y);
+        return [pt[X] + 0.5, pt[Y], 0]
     },
 
     relToAbs: function(pt) {
         const centerX = G.canvas.width/2;
         const centerY = G.canvas.height/2;
-        return {
-            'x': (centerX + pt.x * 100),
-            'y': (centerY - pt.y * 100)
-        };
+        return [(centerX + pt[X] * 100), (centerY - pt[Y] * 100), 0]
     },
 
     drawShape: function(pts, color, alpha) {
@@ -296,10 +308,10 @@ const physical = {
         G.ctx.fillStyle = color;
         G.ctx.globalAlpha = alpha;
         G.ctx.beginPath();
-        G.ctx.moveTo(pts[0].x, pts[0].y);
+        G.ctx.moveTo(pts[0][X], pts[0][Y]);
         for (var i = 1; i < pts.length; i++) {
             const fixed = physical.fixPointForCanvas(pts[i]);
-            G.ctx.lineTo(fixed.x, fixed.y);
+            G.ctx.lineTo(fixed[X], fixed[Y]);
         }
         G.ctx.fill();
     }
@@ -307,15 +319,6 @@ const physical = {
 
 const origin = function() {
     return [0, 0, 0];
-}
-
-
-const vecToPoint = function(v) {
-    return getPoint(v[0], v[1]);
-}
-
-const getPoint = function(x, y, z = 0) {
-    return {'x': x, 'y': y, 'z': z};
 }
 
 
