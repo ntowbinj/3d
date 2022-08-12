@@ -6,22 +6,43 @@ const Mesh = function(verteces, triangles, id = -1) {
     };
 };
 
-const Verteces = function(vertMatrix) {
-    const center = midPoint(vertMatrix);
+const Verteces = function(vertMatrix, center, radiusSquared) {
+    const theCenter = center || midPoint(vertMatrix);
+    const theRadiusSquared = radiusSquared || getRadiusSquared(theCenter, vertMatrix);
     return {
         vertMatrix: vertMatrix,
         get: function(i) {
             return this.vertMatrix[i];
         },
-        center: center,
-        radius: radius(center, vertMatrix)
+        center: theCenter,
+        radiusSquared: theRadiusSquared,
+
+        unitaryTransformation: function(m) {
+            const newVertMatrix = Mat.prod(this.vertMatrix, m);
+            const newCenter = Mat.prod([this.center], m);
+            return Verteces(newVertMatrix, newCenter, this.radiusSquared);
+        },
+
+        scale: function(s) {
+            const newVertMatrix = Mat.scaleRecursive(this.vertMatrix, s);
+            const newCenter = Mat.scaleVec(this.center, s);
+            const newRadiusSquared = this.radiusSquared * s * s;
+            return new Verteces(newVertMatrix, newCenter, newRadiusSquared);
+        },
+
+        translate: function(v) {
+            const newVertMatrix = Mat.translateRecursive(this.vertMatrix, v);
+            const newCenter = Mat.addVec(this.center, v);
+            return new Verteces(newVertMatrix, newCenter, this.radiusSquared);
+        }
     };
+
 };
 
-const radius = function(center, pts) {
+const getRadiusSquared = function(center, pts) {
     let max = 0;
     for (var i = 0; i < pts.length; i++) {
-        const dist = Mat.norm(Mat.subVec(pts[i], center));
+        const dist = Mat.squaredNorm(Mat.subVec(pts[i], center));
         max = Math.max(max, dist);
     }
     return max;

@@ -9,7 +9,7 @@ const Pictures = function() {
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
     //const shape = icosahedron();
-    Math.seedrandom('5');
+    Math.seedrandom('');
     const shape = icosahedronMesh({});
     let shapes = [];
     var id = 0;
@@ -19,16 +19,14 @@ const Pictures = function() {
                 if (Math.random() > 0.99993) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const vertsTrans = Mat.translateRecursive(
-                        Mat.scaleRecursive(
-                            Mat.prodRecursive(shape.verteces.vertMatrix, randRot),
-                            0.5 * samplePareto(.001 + Math.random())
-                        ),
-                        [i, j, k]
-                    );
+                    const vertsTrans = shape.verteces
+                        .unitaryTransformation(randRot)
+                        .scale(0.5 * samplePareto(.001 + Math.random()))
+                        .translate([i, j, k]);
+
                     const color = tinycolor.random();
                     const newshapesa = icosahedronMesh({color: color}, id);
-                    newshapesa.verteces = Verteces(vertsTrans);
+                    newshapesa.verteces = vertsTrans;
                     shapes.push(newshapesa);
                 }
             }
@@ -37,18 +35,21 @@ const Pictures = function() {
 
     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
     //const bigOne = icosahedronMesh({color: tinycolor.random()});
-    const vertsTrans = Mat.translateRecursive(
-        Mat.scaleRecursive(
-            Mat.prodRecursive(shape.verteces.vertMatrix, randRot),
-            1000
-        ),
-        [-12000, 0, -9000]
-    )
+    /*
+    const vertsTrans = shape.verteces
+        .unitaryTransformation(randRot)
+        .scale(1000)
+        .translate([-12000, 0, -9000]);
+        */
+    const vertsTrans = shape.verteces
+        .unitaryTransformation(randRot)
+        .scale(2)
+        .translate([0, 0, -10]);
     const bigOne = Mesh(
-        Verteces(vertsTrans),
+        vertsTrans,
         icoTriangles({color: tinycolor('cyan')})
     );
-    //shapes = []
+    shapes = []
     shapes.push(bigOne);
 
 
