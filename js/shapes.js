@@ -19,7 +19,7 @@ const Verteces = function(vertMatrix, center, radiusSquared) {
 
         unitaryTransformation: function(m) {
             const newVertMatrix = Mat.prod(this.vertMatrix, m);
-            const newCenter = Mat.prod([this.center], m);
+            const newCenter = Mat.prod([this.center], m)[0];
             return Verteces(newVertMatrix, newCenter, this.radiusSquared);
         },
 
