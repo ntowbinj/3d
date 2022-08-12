@@ -74,7 +74,10 @@ const init = function() {
         'theta',
         'light_alpha',
         'light_beta',
-        'light_theta'
+        'light_theta',
+        'trans_alpha',
+        'trans_beta',
+        'trans_theta'
     ];
     for (var i = 0; i < angleInputs.length; i++) {
         addInput(

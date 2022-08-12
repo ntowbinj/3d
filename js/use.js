@@ -7,10 +7,11 @@ const Pictures = function() {
 
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
-    const base = Mat.scale([[0, 0, 0], [1, 0, 0], [0, 1, 0]], 1);
+    const base = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
     const cube = [];
-    cube.push(base);
-    cube.push(
+    const face = [];
+    face.push(base);
+    face.push(
         Mat.translateRecursive(
             Mat.prod(
                 base,
@@ -19,9 +20,21 @@ const Pictures = function() {
             [1, 1, 0]
         )
     );
+    cube.push.apply(cube, face);
+    cube.push.apply(
+        cube,
+        Mat.translateRecursive(
+            Mat.prodRecursive(
+                face, 
+                Mat.counterClockXZ(-0.5 * Math.PI)
+            ),
+            [0, 0, -1]
+        )
+    );
     const triangles = [];
     var id = 0;
-    for (var k = -200; k <= 10; k++) {
+        /*
+    for (var k = -200; k <= -150; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
                 if (Math.random() > 0.999) {
@@ -54,6 +67,7 @@ const Pictures = function() {
             }
         }
     }
+    */
     shuffle(triangles);
     return {
 
@@ -64,10 +78,24 @@ const Pictures = function() {
         },
 
         draw: function() {
+            const color = tinycolor('cyan');
+            const rot = Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta);
+            const theCube = Mat.prodRecursive(cube, rot);
+            const trangs = [];
+            for (var c = 0; c < theCube.length; c++) {
+                id += 1;
+                trangs.push(
+                    triang(
+                        theCube[c],
+                        {color: color},
+                        id
+                    )
+                );
+            }
             drawBackground();
-            const allTriangs = logical.getAllTriangles(triangles);
+            const allTriangs = logical.getAllTriangles(trangs);
             physical.draw(allTriangs);
-            logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 10])), {color: 'white'});
+            logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(Mat.prodRecursive(v, rot), [0, 0, 0])), {color: 'white'});
         }
     }
 };
