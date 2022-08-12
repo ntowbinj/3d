@@ -18,7 +18,7 @@ const basis3 = {
     i: [1, 0, 0],
     j: [0, 1, 0],
     k: [0, 0, 1]
-}
+};
 
 const X = 0;
 const Y = 1;
@@ -29,22 +29,28 @@ const G = {};
 
 const S = {};
 
+const applyDebug = function(name, value) {
+    setState(name, value);
+    update();
+    draw();
+};
+
 const setState = function(name, value) {
     S[name] = value;
-}
+};
 
 const handleInputChange = function(name, value) {
     setState(name, value);
     update();
     draw();
-}
+};
 
 const init = function() {
     addInput(
-        get01Input('cam_x', 0.5)
+        getInput('cam_x', -10, 10, 0)
     );
     addInput(
-        get01Input('cam_y', 0.5)
+        getInput('cam_y', -10, 10, 0)
     );
     addInput(
         getInput('cam_z', -200, 200, 20)
@@ -60,7 +66,7 @@ const init = function() {
         );
     }
     addInput(
-        getInput('focalLength', 0.01, 50, 1)
+        getInput('focalLength', 1, 50, 1)
     );
 
     for (var i = 0; i < G.config.inputs.length; i++) {
@@ -70,7 +76,18 @@ const init = function() {
     G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
     G.timingBuffer = [];
 
-}
+};
+
+const log = {
+
+    isDebug: false,
+
+    debug: function(s) {
+        if (this.isDebug) {
+            console.log(s);
+        }
+    }
+};
 
 const update = function() {
     const perfNow = window.performance.now();
@@ -80,9 +97,11 @@ const update = function() {
     }
     S.lastUpdated = now;
     updateCamera();
+    updateLight();
     G.config.update();
+    log.debug(S);
     G.timingBuffer.push(window.performance.now() - perfNow);
-}
+};
 
 const mean = function(arr) {
     var sum = 0;
@@ -90,10 +109,10 @@ const mean = function(arr) {
         sum += arr[i];
     }
     return sum / arr.length;
-}
+};
 
 const updateCamera = function() {
-    setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, S.cam_z]);
+    setState('camera_pos', [S.cam_x, S.cam_y, S.cam_z]);
 
     setState('Rx', Mat.counterClockYZ(S.alpha));
     setState('Ry', Mat.counterClockXZ(S.beta));
@@ -110,22 +129,25 @@ const updateCamera = function() {
         )
     );
     setState('inverseCombinedRotation', Mat.trans(S.combinedRotation));
-    const focVec = [0, 0, -1 * S.focalLength];
-    const focPoint = Mat.addVec(S.camera_pos, focVec);
+    const focPoint = [0, 0, -1 * S.focalLength];
     setState('focPoint', focPoint);
-}
+};
+
+const updateLight = function() {
+    setState('lightDir', Mat.normed([-1, -1, -1]));
+};
 
 const toRange = function(s, e, t) {
     return s + (e - s) * t;
-}
+};
 
 const fromRange = function(s, e, t) {
     return (t - s)/(e - s);
-}
+};
 
 const getAxes = function(l) {
     return [[-1 * l, 0], [l, 0], [0, -1 * l], [0, l]];
-}
+};
 
 const getAxes3d = function(l) {
     return [
@@ -133,11 +155,11 @@ const getAxes3d = function(l) {
         [0, -1 * l, 0], [0, l, 0],
         [0, 0, -1 * l], [0, 0, l]
     ];
-}
+};
 
 const getSquare = function(l) {
     return [[-1 * l, l], [l, l], [l, -1 * l], [-1 * l, -1 * l]];
-}
+};
 
 const getGrid = function(l) {
     const ret = [];
@@ -152,7 +174,7 @@ const getGrid = function(l) {
         );
     }
     return ret;
-}
+};
 
 const getTicks3d = function(s, e, l) {
     const ret = [];
@@ -160,7 +182,7 @@ const getTicks3d = function(s, e, l) {
         getXTicks(s, e, l)
     );
 
-}
+};
 
 const getXTicks = function(s, e, l) {
     const result = [];
@@ -169,22 +191,22 @@ const getXTicks = function(s, e, l) {
         result.push([x, l * 0.5]);
     }
     return result;
-}
+};
 
 const getYTicks = function(s, e, l) {
     const orth = G.orthNeg90;
     return Mat.prod(getXTicks(s, e, l), orth);
-}
+};
 
 
 const draw = function() {
     drawBackground();
     G.config.draw();
-}
+};
 
 const get01Input = function(name, initialValue = 0) {
     return getInput(name, 0, 1, initialValue);
-}
+};
 
 const getInput = function(name, s, e, initialValue = 0) {
     if (s >= e) {
@@ -201,7 +223,7 @@ const getInput = function(name, s, e, initialValue = 0) {
         's': s,
         'e': e
     }
-}
+};
 
 
 const addInput = function(input) {
@@ -221,11 +243,22 @@ const addInput = function(input) {
     $(input.select).slider('value', fromRange(input.s, input.e, S[input.name]) * 100)
     $(input.select).slider('option', 'step', 0.10);
 
-}
+};
 
 const byId = function(id) {
     return document.getElementById(id);
-}
+};
+
+const in3d = function(v) {
+    if (v.length == 2) {
+        return [v[X], v[Y], 0];
+    } else if (v.length == 3) {
+        return v;
+    } else {
+        throw new Error('must be 2d or 3d, got ' + v);
+    }
+};
+
 
 const Logical = function(
     transform = function(v) {return v},
@@ -323,7 +356,29 @@ const Logical = function(
             if (!(ALPHA in options)) {
                 options[ALPHA] = 1.0;
             }
-            physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
+            const physicalPoints = this.physPointList(pts);
+            physical.drawShape(physicalPoints, options.color, options.alpha);
+
+            //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
+        },
+
+        drawTriangle: function(pts, options = {}) {
+            const a = Mat.subVec(pts[1], pts[0]);
+            const b = Mat.subVec(pts[2], pts[0]);
+            const cross = Mat.normedCross(a, b);
+            const lightDot = Mat.dot(cross, S.lightDir);
+            const scaled = 50 + (50 * lightDot);
+            if (!(COLOR in options)) {
+                options.color = '#FFF';
+            }
+            if (!(ALPHA in options)) {
+                options.alpha = 1.0;
+            }
+            options.color = tinycolor(options.color).darken(scaled).toString();
+            const physicalPoints = this.physPointList(pts);
+            physical.drawShape(physicalPoints, options.color, options.alpha);
+
+            //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
 
 
@@ -345,30 +400,86 @@ const Logical = function(
                     )
                 )
             );
+        },
+
+        physPointList: function(vecList) {
+            return vecList.map(in3d)
+                .map(this.transform)
+                .map(camera.translate)
+                .map(camera.rotate)
+                .map(camera.projectRotated)
+                .map(camera.uninvert)
+                .map(physical.relToAbs);
+        },
+
+        rotateAndDepthSort: function(trianglesWithOptions) {
+            const withZ = [];
+            for (var i = 0; i < trianglesWithOptions.length; i++) {
+                const triangle = trianglesWithOptions[i][0];
+                const opt = trianglesWithOptions[i][1];
+                const rotated = triangle.map(this.transform)
+                    .map(camera.translate)
+                    .map(camera.rotate);
+                const midP = this.midPoint(rotated);
+                withZ.push([rotated, opt, midP[Z]]);
+            }
+            withZ.sort(function(a, b) {
+                if (a[2] < b[2]) {
+                    return -1;
+                }
+                if (a[2] > b[2]) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            for (var i = 0; i < withZ.length; i++) {
+                const triang = withZ[i][0];
+                const abs = triang.map(camera.projectRotated)
+                    .map(camera.uninvert)
+                    .map(physical.relToAbs);
+                const options = withZ[i][1];
+                physical.drawShape(abs, options.color, options.alpha);
+
+            }
+
+        },
+
+        midPoint: function(shape) {
+            var sum = [0, 0, 0];
+            for (var i = 0; i < shape.length; i++) {
+                sum = Mat.addVec(sum, shape[i]);
+            }
+            return Mat.scaleVec(sum, 1 / shape.length);
+        },
+
+        physPointListDebug: function(vecList) {
+            const in3dResult = vecList.map(in3d);
+            const transformed = in3dResult.map(this.transform);
+            const translated = transformed.map(camera.translate);
+            const rotated = translated.map(camera.rotate);
+            const projected = rotated.map(camera.projectRotated);
+            const uninverted = projected.map(camera.uninvert);
+            const relToAbs = uninverted.map(physical.relToAbs);
+            return relToAbs;
         }
     }
-}
-
-const in3d = function(v) {
-    if (v.length == 2) {
-        return [v[X], v[Y], 0];
-    } else if (v.length == 3) {
-        return v;
-    } else {
-        throw new Error('must be 2d or 3d, got ' + v);
-    }
-}
+};
 
 const camera = {
 
-    translateAndRotate: function(pt) {
+    translate: function(pt) {
         const camera_pos = S.camera_pos;
         const translated = Mat.subVec(pt, camera_pos);
-        return Mat.prod([translated], S.inverseCombinedRotation)[0];
+        return translated;
     },
 
-    project: function(pt) {
-        const ray = Mat.subVec(S.focPoint, this.translateAndRotate(pt));
+    rotate: function(pt) {
+        return Mat.prod([pt], S.inverseCombinedRotation)[0];
+    },
+
+    projectRotated: function(transRot) {
+        const ray = Mat.subVec(S.focPoint, transRot);
 
         if (ray[Z] <= 0) {
             return null;
@@ -376,7 +487,13 @@ const camera = {
 
         const diffX = ray[X] * (S.focalLength / ray[Z]);
         const diffY = ray[Y] * (S.focalLength / ray[Z]);
-        return [diffX, diffY, 0];
+        const ret = [diffX, diffY, 0];
+        return ret;
+    },
+
+    project: function(pt) {
+        const transRot = this.rotate(this.translate(pt));
+        return this.projectRotated(transRot);
     },
 
     uninvert: function(pt) {
@@ -389,7 +506,7 @@ const camera = {
     projUninvert: function(pt) {
         return camera.uninvert(camera.project(pt));
     }
-}
+};
 
 
 const physical = {
@@ -444,11 +561,11 @@ const physical = {
         }
         G.ctx.fill();
     }
-}
+};
 
 const origin = function() {
     return [0, 0, 0];
-}
+};
 
 
 const setUpCanvas = function() {
@@ -460,13 +577,13 @@ const setUpCanvas = function() {
     G.canvas = canvas;
     G.ctx = ctx;
     drawBackground();
-}
+};
 
 const drawBackground = function() {
     G.ctx.globalAlpha = 1;
     G.ctx.fillStyle = 'black';//COLORS.background;
     G.ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
+};
 
 const Mat = {
     mat: function(arrs) {
@@ -697,8 +814,21 @@ const Mat = {
     inverse: function(A) {
         const det = Mat.det(A);
         return Mat.scale(Mat.trans(Mat.cofactors(A)), 1 / det);
+    },
+
+    cross: function(a, b) {
+        return [
+            a[X] * b[Y] - a[Y] * b[X],
+            -1 * (a[X] * b[Z] - a[Z] * b[X]),
+            a[Y] * b[Z] - a[Z] * b[Y]
+        ];
+    },
+
+    normedCross: function(a, b) {
+        const cross = this.cross(a, b);
+        return this.scaleVec(cross, 1 / this.norm(cross));
     }
-}
+};
 
 
 
@@ -709,11 +839,7 @@ const main = function() {
     update();
     draw();
     $("#record").click(startRecording);
-}
-
-const ofPeriod = function(s) {
-    return 2 * Math.PI * s;
-}
+};
 
 const Pictures = function() {
     const logical = Logical(
@@ -723,15 +849,16 @@ const Pictures = function() {
     );
     const triang = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
     const triangles = [];
-    for (var k = -40; k <= 10; k++) {
-        for (var i = -20; i <= 20; i++) {
-            for (var j = -20; j <= 20; j++) {
-                if (Math.random() > 0.98) {
-                    triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 3), p)));
+    for (var k = -300; k <= 10; k++) {
+        for (var i = -40; i <= 40; i++) {
+            for (var j = -40; j <= 40; j++) {
+                if (Math.random() > 0.999) {
+                    triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 1), p)));
                 }
             }
         }
     }
+    shuffle(triangles);
     return {
 
         inputs: [
@@ -744,17 +871,21 @@ const Pictures = function() {
 
         draw: function() {
             drawBackground();
+            const shapes = [];
             for (var i = 0; i < triangles.length; i++) {
                 const shape = triangles[i];
-                logical.drawShape(shape, {color: this.colors[(i % this.colors.length)]});
+                //logical.drawTriangle(shape, {color: this.colors[(i % this.colors.length)]});
+                shapes.push([shape, {color: this.colors[(i % this.colors.length)]}]);
             }
+            logical.rotateAndDepthSort(shapes);
+            logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 10])), {color: 'white'});
+            //const triang = [[0, 0, 0], [1, 0, 0], [1, 1, 0]];
+            //logical.drawShape(triang, {color: 'yellow'});
+
         }
     }
-}
+};
 
-const animate = function() {
-
-}
 
 function startRecording() {
     const chunks = []; // here we will store our recorded media chunks (Blobs)
@@ -767,7 +898,7 @@ function startRecording() {
 
     rec.start();
     setTimeout(()=>rec.stop(), 10000); // stop recording in 3s
-}
+};
 
 function exportVid(blob) {
     const vid = document.createElement('video');
@@ -779,6 +910,18 @@ function exportVid(blob) {
     a.href = vid.src;
     a.textContent = 'download the video';
     document.body.appendChild(a);
-}
+};
 
 window.addEventListener('load', main);
+
+// TODO delete
+function shuffle(a) {
+    var j, x, i;
+    for (i = a.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = a[i];
+        a[i] = a[j];
+        a[j] = x;
+    }
+    return a;
+}
