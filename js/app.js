@@ -29,6 +29,18 @@ const G = {};
 
 const S = {};
 
+const triang = function(verts, opts, id = -1) {
+    const a = Mat.subVec(verts[1], verts[0]);
+    const b = Mat.subVec(verts[2], verts[0]);
+    const cross = Mat.normedCross(a, b);
+    return {
+        verts: verts,
+        opts: opts,
+        normal: cross,
+        id: id
+    };
+}
+
 const applyDebug = function(name, value) {
     setState(name, value);
     update();
@@ -412,11 +424,26 @@ const Logical = function(
                 .map(physical.relToAbs);
         },
 
-        rotateAndDepthSort: function(trianglesWithOptions) {
+        drawAllTriangles: function(trngs) {
+            const sorted = this.rotateAndDepthSort(trngs);
+
+            for (var i = 0; i < sorted.length; i++) {
+                const triang = sorted[i][0];
+                const abs = triang.map(camera.projectRotated)
+                    .map(camera.uninvert)
+                    .map(physical.relToAbs);
+                const options = sorted[i][1];
+                physical.drawShape(abs, options.color, options.alpha);
+
+            }
+
+        },
+
+        rotateAndDepthSort: function(trngs) {
             const withZ = [];
-            for (var i = 0; i < trianglesWithOptions.length; i++) {
-                const triangle = trianglesWithOptions[i][0];
-                const opt = trianglesWithOptions[i][1];
+            for (var i = 0; i < trngs.length; i++) {
+                const triangle = trngs[i].verts;
+                const opt = trngs[i].opts;
                 const rotated = triangle.map(this.transform)
                     .map(camera.translate)
                     .map(camera.rotate);
@@ -433,15 +460,7 @@ const Logical = function(
                 return 0;
             });
 
-            for (var i = 0; i < withZ.length; i++) {
-                const triang = withZ[i][0];
-                const abs = triang.map(camera.projectRotated)
-                    .map(camera.uninvert)
-                    .map(physical.relToAbs);
-                const options = withZ[i][1];
-                physical.drawShape(abs, options.color, options.alpha);
-
-            }
+            return withZ;
 
         },
 
@@ -847,13 +866,24 @@ const Pictures = function() {
             return v;
         }
     );
-    const triang = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
+
+
+    const colors = ['yellow', 'red', 'blue', 'orange', 'green', 'white', 'cyan', 'purple'];
+    const base = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
     const triangles = [];
+    var id = 0;
     for (var k = -300; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
                 if (Math.random() > 0.999) {
-                    triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 1), p)));
+                    id += 1;
+                    triangles.push(
+                        triang(
+                            base.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 1), p)),
+                            {color: colors[(id % colors.length)]},
+                            id
+                        )
+                    );
                 }
             }
         }
@@ -867,17 +897,9 @@ const Pictures = function() {
         update: function() {
         },
 
-        colors: ['yellow', 'red', 'blue', 'orange', 'green', 'white', 'cyan', 'purple'],
-
         draw: function() {
             drawBackground();
-            const shapes = [];
-            for (var i = 0; i < triangles.length; i++) {
-                const shape = triangles[i];
-                //logical.drawTriangle(shape, {color: this.colors[(i % this.colors.length)]});
-                shapes.push([shape, {color: this.colors[(i % this.colors.length)]}]);
-            }
-            logical.rotateAndDepthSort(shapes);
+            logical.drawAllTriangles(triangles);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 10])), {color: 'white'});
             //const triang = [[0, 0, 0], [1, 0, 0], [1, 1, 0]];
             //logical.drawShape(triang, {color: 'yellow'});
