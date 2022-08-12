@@ -90,24 +90,7 @@ const cube = function(opts) {
 
 };
 
-const icosahedronMesh = function(opts, id = -1) {
-    const t = (1 + Math.sqrt(5)) / 2;
-    const v = [];
-    v.push(Mat.normed([-1.0,  t, 0.0]));
-    v.push(Mat.normed([ 1.0,  t, 0.0]));
-    v.push(Mat.normed([-1.0, -t, 0.0]));
-    v.push(Mat.normed([ 1.0, -t, 0.0]));
-    v.push(Mat.normed([0.0, -1.0,  t]));
-    v.push(Mat.normed([0.0,  1.0,  t]));
-    v.push(Mat.normed([0.0, -1.0, -t]));
-    v.push(Mat.normed([0.0,  1.0, -t]));
-    v.push(Mat.normed([ t, 0.0, -1.0]));
-    v.push(Mat.normed([ t, 0.0,  1.0]));
-    v.push(Mat.normed([-t, 0.0, -1.0]));
-    v.push(Mat.normed([-t, 0.0,  1.0]));
-
-    const verts = Verteces(v);
-
+const icoTriangles = function(opts, id = -1) {
     const triangs = [];
 
     triangs.push(Tri([0, 11, 5], opts));
@@ -130,6 +113,27 @@ const icosahedronMesh = function(opts, id = -1) {
     triangs.push(Tri([6, 2, 10], opts));
     triangs.push(Tri([8, 6, 7], opts));
     triangs.push(Tri([9, 8, 1], opts));
+    return triangs;
+}
 
-    return Mesh(verts, triangs, id);
+const icosahedronMesh = function(opts, id = -1) {
+    const t = (1 + Math.sqrt(5)) / 2;
+    const v = [];
+    v.push(Mat.normed([-1.0,  t, 0.0]));
+    v.push(Mat.normed([ 1.0,  t, 0.0]));
+    v.push(Mat.normed([-1.0, -t, 0.0]));
+    v.push(Mat.normed([ 1.0, -t, 0.0]));
+    v.push(Mat.normed([0.0, -1.0,  t]));
+    v.push(Mat.normed([0.0,  1.0,  t]));
+    v.push(Mat.normed([0.0, -1.0, -t]));
+    v.push(Mat.normed([0.0,  1.0, -t]));
+    v.push(Mat.normed([ t, 0.0, -1.0]));
+    v.push(Mat.normed([ t, 0.0,  1.0]));
+    v.push(Mat.normed([-t, 0.0, -1.0]));
+    v.push(Mat.normed([-t, 0.0,  1.0]));
+
+    const verts = Verteces(v);
+
+
+    return Mesh(verts, icoTriangles(opts), id);
 };
