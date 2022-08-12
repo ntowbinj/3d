@@ -18,7 +18,7 @@ const Pictures = function() {
     for (var k = -50; k <= 1; k++) {
         for (var i = -30; i <= 5; i++) {
             for (var j = -10; j <= 10; j++) {
-                if (Math.random() > 0.95) {
+                if (Math.random() > 0.98) {
                     let shapeFunc;
                     let vertsTrans;
                     if (Math.random() > 0.25) {

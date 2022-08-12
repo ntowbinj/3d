@@ -621,7 +621,7 @@ const camera = {
     },
 
     rotate: function(pt) {
-        return Mat.prod([pt], S.inverseCombinedRotation)[0];
+        return Mat.prodVec3(pt, S.inverseCombinedRotation);
     },
 
     projectRotated: function(transRot) {

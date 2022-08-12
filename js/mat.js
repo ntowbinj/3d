@@ -19,33 +19,13 @@ const Mat = {
 
     },
 
-    /*
-    prod: function(A, B) {
-        const [A_n, A_m] = Mat.shape(A);
-        const [B_n, B_m] = Mat.shape(B);
-        if (A_m != B_n) {
-            throw new Error("can't multiply shapes " + Mat.shape(A) + " and " + Mat.shape(B));
-        }
-        B_trans = Mat.trans(B);
-        const res = [];
-        for (var i = 0; i < A_n; i++) {
-            const row = [];
-            for (var j = 0; j < B_m; j++) {
-                row.push(Mat.dot(A[i], B_trans[j]));
-            }
-            res.push(row);
-        }
-        return res;
-    },
-    */
-
     prod: function(A, B) {
         const res = [];
         for (var i = 0; i < A.length; i++) {
             const row = [];
             for (var j = 0; j < B[0].length; j++) {
                 let dot = 0;
-                for (var k = 0; k < A_m; k++) {
+                for (var k = 0; k < A[0].length; k++) {
                     dot += A[i][k] * B[k][j];
                 }
                 row.push(dot);
@@ -54,6 +34,20 @@ const Mat = {
         }
         return res;
     },
+
+    prodVec3: function(v, M) {
+        return [
+            v[0] * M[0][0] + v[1] * M[1][0] + v[2] * M[2][0],
+            v[0] * M[0][1] + v[1] * M[1][1] + v[2] * M[2][1],
+            v[0] * M[0][2] + v[1] * M[1][2] + v[2] * M[2][2]
+        ];
+    },
+
+    /*
+    prodVec3: function(v, M) {
+        return this.prod([v], M)[0];
+    },
+    */
 
     addVec: function(a, b) {
         ret = [];
