@@ -1,7 +1,8 @@
 const COLORS = {
     'background': '#611'
 }
-
+COLOR = "color";
+THICK = "thick";
 
 const G = {};
  
@@ -36,6 +37,24 @@ const init = function() {
 const update = function() {
     setState('camera_pos', getPoint((S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9));
     G.config.update();
+}
+
+const getAxes = function() {
+    return [[-100, 0], [100, 0], [0, -100], [0, 100]];
+}
+
+const getXTicks = function(s, e, l) {
+    const result = [];
+    for (var x = s; x < e; x++) {
+        result.push([x, l * -0.5]);
+        result.push([x, l * 0.5]);
+    }
+    return result;
+}
+
+const getYTicks = function(s, e, l) {
+    const orth = Mat.orth2(Math.PI / 2);
+    return Mat.prod(getXTicks(s, e, l), orth);
 }
 
 
@@ -82,11 +101,14 @@ const byId = function(id) {
 
 const logical = {
 
-    drawVecOrig: function(v) {
-        logical.drawVec([0, 0], v);
+    drawVecOrig: function(v, options = {}) {
+        if (!(COLOR in options)) {
+            options[COLOR] = 'cyan';
+        }
+        logical.drawVec([0, 0], v, options);
     },
 
-    drawVec: function(s, e) {
+    drawVec: function(s, e, options = {}) {
         const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
         const norm = Mat.norm(posVec);
         const lengthRatio = 0.1/(1 + Math.log(1 + norm/5));
@@ -99,16 +121,31 @@ const logical = {
             Mat.addVec(triangIntersectVec, leftAdd),
             Mat.addVec(triangIntersectVec, rightAdd)
         ];
-        logical.drawLine(s, e);
-        logical.drawShape(triang);
+        logical.drawLine(s, e, options);
+        logical.drawShape(triang, options);
     },
 
-    drawLine: function(s, e) {
-        physical.drawLineAbs(physical.relToAbs(vecToPoint(s)), physical.relToAbs(vecToPoint(e)));
+    drawLineList: function(l, options = {}) {
+        if ((l.length % 2) != 0) {
+            throw new Error('need even number of points for line list');
+        }
+        for (var i = 0; i < l.length / 2; i++) {
+            logical.drawLine(l[i * 2], l[(i * 2) + 1], options);
+        }
     },
 
-    drawShape: function(pts) {
-        physical.drawShape(pts.map(pt => physical.relToAbs(vecToPoint(pt))));
+    drawLine: function(s, e, options = {}) {
+        if (!(COLOR in options)) {
+            options[COLOR] = '#FFF';
+        }
+        physical.drawLineAbs(physical.relToAbs(vecToPoint(s)), physical.relToAbs(vecToPoint(e)), options.color);
+    },
+
+    drawShape: function(pts, options = {}) {
+        if (!(COLOR in options)) {
+            options[COLOR] = '#FFF';
+        }
+        physical.drawShape(pts.map(pt => physical.relToAbs(vecToPoint(pt))), options.color);
     }
 }
 
@@ -132,8 +169,8 @@ const camera = {
 
 const physical = {
 
-    drawLineAbs: function(s, e, w) {
-        G.ctx.strokeStyle = "#FFFFFF";
+    drawLineAbs: function(s, e, color) {
+        G.ctx.strokeStyle = color;
         G.ctx.lineWidth = 2;
         G.ctx.beginPath();
         const fixedS = physical.fixPointForCanvas(s);
@@ -163,9 +200,9 @@ const physical = {
         };
     },
 
-    drawShape: function(pts) {
-        G.ctx.strokeStyle = "#FFFFFF";
-        G.ctx.fillStyle = "#FFFFFF";
+    drawShape: function(pts, color) {
+        G.ctx.strokeStyle = color;
+        G.ctx.fillStyle = color;
         G.ctx.beginPath();
         G.ctx.moveTo(pts[0].x, pts[0].y);
         for (var i = 1; i < pts.length; i++) {
@@ -192,6 +229,8 @@ const getPoint = function(x, y, z = 0) {
 
 const setUpCanvas = function() {
     canvas = byId('canvas');
+    canvas.width = 4;
+    console.log(canvas.width);
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     ctx = canvas.getContext('2d');
@@ -364,43 +403,13 @@ const euler = {
 
     draw: function() {
         drawBackground();
+        const axes = getAxes();
+        logical.drawLineList(axes);
+        logical.drawLineList(getXTicks(-100, 100, 0.3));
+        logical.drawLineList(getYTicks(-100, 100, 0.3));
         for(var i = 0; i < S.lst.length; i++) {
-            logical.drawVec(S.lst[i][0], S.lst[i][1]);
+            logical.drawVec(S.lst[i][0], S.lst[i][1], {color: 'cyan'});
         }
-    }
-
-}
-
-const config1 = {
-    update: function() {
-        const Q = Mat.orth2(S.q * (Math.PI * 2));
-        const B = Mat.mat([[2, 0], [1, 4]]);
-        const D = Mat.mat([[S.d * 2 -1, 0], [0, S.e * 2 - 1]]);
-        const I = Mat.ident(2);
-        const a = S.a;
-        const res = Mat.prod(Q, Mat.prod(Mat.convComb(I, B, a), D));
-        setState('C', res);
-    },
-
-    init: function() {
-        addInput(
-            getInput('a')
-        );
-        addInput(
-            getInput('q')
-        );
-        addInput(
-            getInput('d', 1)
-        );
-        addInput(
-            getInput('e', 1)
-        );
-    },
-
-    draw: function() {
-        drawBackground();
-        logical.drawVecOrig(Mat.trans(S.C)[0]);
-        logical.drawVecOrig(Mat.trans(S.C)[1]);
     }
 
 }
