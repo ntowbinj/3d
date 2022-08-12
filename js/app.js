@@ -514,7 +514,7 @@ const Pictures = function() {
                 const axes = getAxes(5);
                 const grid = getGrid(5);
                 logical.drawLineList(axes, 0.7);
-                logical.drawLineList(grid, 0.4);
+                //logical.drawLineList(grid, 0.4);
                 logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
                 logical.drawVecOrig(S.A[0], {color: 'yellow', width: 5});
@@ -525,7 +525,10 @@ const Pictures = function() {
                 const vy = [0, v[1]];
                 const wUnit = Mat.normed(w);
                 const wOrth = Mat.normed(Mat.prod([w], G.orth90)[0]);
+                const wGrid = Mat.prod(grid, Mat.orth2(Math.asin(wUnit[0])));
+                logical.drawLineList(wGrid, 0.3, {color: 'orange'});
                 const projVxWOrth = Mat.proj(vx, wOrth);
+                const projVxW = Mat.proj(vx, w);
                 const projVyW = Mat.proj(vy, w);
                 const projVySummed = Mat.addVec(projVyW, vx);
                 const projVW = Mat.proj(v, w);
@@ -535,6 +538,7 @@ const Pictures = function() {
                 logical.drawVec(vx, v, {color: 'yellow', width: 1.5});
                 logical.drawDashedLine([0, 0], projVxWOrth, 1);
                 logical.drawDashedLine(projVxWOrth, vx, 1);
+                logical.drawDashedLine(projVxW, vx, 1);
                 logical.drawDashedLine(vx, projVySummed, 1);
                 logical.drawDashedLine(v, projVySummed, 1);
                 logical.drawDashedLine(projVW, v, 1);
