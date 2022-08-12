@@ -9,10 +9,10 @@ const Pictures = function() {
     const base = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
     const triangles = [];
     var id = 0;
-    for (var k = -300; k <= 10; k++) {
+    for (var k = -200; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
-                if (Math.random() > 0.999) {
+                if (Math.random() > 0.997) {
                     id += 1;
                     const randRot = Mat.prod(
                         Mat.counterClockXY(randAngle()),
