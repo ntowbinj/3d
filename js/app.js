@@ -39,8 +39,8 @@ const update = function() {
     G.config.update();
 }
 
-const getAxes = function() {
-    return [[-100, 0], [100, 0], [0, -100], [0, 100]];
+const getAxes = function(l) {
+    return [[-1 * l, 0], [l, 0], [0, -1 * l], [0, l]];
 }
 
 const getXTicks = function(s, e, l) {
@@ -85,7 +85,7 @@ const addInput = function(input) {
     sldr.setAttribute("id", input.id);
     domObj.appendChild(label);
     domObj.appendChild(sldr);
-    $("#ctrl").append(domObj);
+    $("#inputs").append(domObj);
     $(input.select).slider({
         slide: function(event, ui) {
             input.handle(ui.value / 100.0);
@@ -99,61 +99,73 @@ const byId = function(id) {
     return document.getElementById(id);
 }
 
-const logical = {
+const Logical = function(
+    transform = function(v) {return v},
+    transformWidth = function(w) {return w}
+) {
+    return {
+        transform: transform,
 
-    drawVecOrig: function(v, options = {}) {
-        if (!(COLOR in options)) {
-            options[COLOR] = 'cyan';
-        }
-        logical.drawVec([0, 0], v, options);
-    },
+        transformWidth: transformWidth,
 
-    drawVec: function(s, e, options = {}) {
-        if (!(THICK in options)) {
-            options[THICK] = true;
-        }
-        const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
-        const norm = Mat.norm(posVec);
-        const lengthRatio = 0.2/(1 + Math.log(1 + norm/2));
-        const segment = Mat.scaleVec(posVec, lengthRatio);
-        const triangIntersectVec = Mat.addVec(e, Mat.scaleVec(segment, -1));
-        const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(Math.PI/2), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
-        const rightAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(-1 * (Math.PI/2)), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
-        const triang = [
-            e,
-            Mat.addVec(triangIntersectVec, leftAdd),
-            Mat.addVec(triangIntersectVec, rightAdd)
-        ];
-        logical.drawLine(s, Mat.addVec(e, Mat.scaleVec(segment, -1)), 3, options);
-        logical.drawShape(triang, options);
-    },
+        drawVecOrig: function(v, options = {}) {
+            if (!(COLOR in options)) {
+                options[COLOR] = 'cyan';
+            }
+            this.drawVec([0, 0], v, options);
+        },
 
-    drawLineList: function(l, w, options = {}) {
-        if ((l.length % 2) != 0) {
-            throw new Error('need even number of points for line list');
-        }
-        for (var i = 0; i < l.length / 2; i++) {
-            logical.drawLine(l[i * 2], l[(i * 2) + 1], w,  options);
-        }
-    },
+        drawVec: function(s, e, options = {}) {
+            if (!(THICK in options)) {
+                options[THICK] = true;
+            }
+            const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
+            const norm = Mat.norm(posVec);
+            const length = 0.1 * (1 + Math.log(4 + norm))
+            const segment = Mat.scaleVec(posVec, Math.min(0.4, length/norm));
+            const triangIntersectVec = Mat.addVec(e, Mat.scaleVec(segment, -1));
+            const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(Math.PI/2), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
+            const rightAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(-1 * (Math.PI/2)), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
+            const triang = [
+                e,
+                Mat.addVec(triangIntersectVec, leftAdd),
+                Mat.addVec(triangIntersectVec, rightAdd)
+            ];
+            this.drawLine(s, Mat.addVec(e, Mat.scaleVec(segment, -1)), 3, options);
+            this.drawShape(triang, options);
+        },
 
-    drawLine: function(s, e, w, options = {}) {
-        if (!(COLOR in options)) {
-            options[COLOR] = '#FFF';
-        }
-        const actualWidth = options.thick ? Math.max(2, w * (1/S.camera_pos.z)) : w;
-        physical.drawLineAbs(logical.physPoint(s), logical.physPoint(e), actualWidth, options.color);
-    },
+        drawLineList: function(l, w, options = {}) {
+            if ((l.length % 2) != 0) {
+                throw new Error('need even number of points for line list');
+            }
+            for (var i = 0; i < l.length / 2; i++) {
+                this.drawLine(l[i * 2], l[(i * 2) + 1], w,  options);
+            }
+        },
 
-    drawShape: function(pts, options = {}) {
-        if (!(COLOR in options)) {
-            options[COLOR] = '#FFF';
-        }
-        physical.drawShape(pts.map(pt => logical.physPoint(pt)), options.color);
-    },
+        drawLine: function(s, e, w, options = {}) {
+            if (!(COLOR in options)) {
+                options[COLOR] = '#FFF';
+            }
+            const actualWidth = this.physWidth(w, options);
+            physical.drawLineAbs(this.physPoint(s), this.physPoint(e), actualWidth, options.color);
+        },
 
-    physPoint: function(vec) {
-        return physical.relToAbs(camera.projUninvert(vecToPoint(vec)));
+        drawShape: function(pts, options = {}) {
+            if (!(COLOR in options)) {
+                options[COLOR] = '#FFF';
+            }
+            physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color);
+        },
+
+        physWidth: function(w, options) {
+            return options.thick ? this.transformWidth(Math.max(1.5, w * (1/S.camera_pos.z))) : w;
+        },
+
+        physPoint: function(vec) {
+            return physical.relToAbs(camera.projUninvert(vecToPoint(this.transform(vec))));
+        }
     }
 }
 
@@ -398,98 +410,75 @@ const Mat = {
     }
 }
 
-const inv = {
-    update: function() {
-        const shiftScale = function(x) {
-            return 2 * (x - 0.5);
-        }
-        const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
-        const B = Mat.trans(Mat.inverse(A));
-        setState('A', A);
-        setState('B', B);
-    },
 
-    init: function() {
-        addInput(
-            getInput('a', 1)
-        );
-        addInput(
-            getInput('b', 0.5)
-        );
-        addInput(
-            getInput('c', 0.5)
-        );
-        addInput(
-            getInput('d', 1)
-        );
-    },
-
-    draw: function() {
-        drawBackground();
-        const axes = getAxes();
-        logical.drawLineList(axes, 0.7);
-        logical.drawLineList(getXTicks(-100, 100, 0.3), 0.7);
-        logical.drawLineList(getYTicks(-100, 100, 0.3), 0.7);
-        for(var i = 0; i < S.A.length; i++) {
-            logical.drawVecOrig(S.A[i], {color: 'orange'});
-        }
-        for(var i = 0; i < S.B.length; i++) {
-            logical.drawVecOrig(S.B[i], {color: 'yellow'});
-        }
-    }
-
-
-}
-
-const euler = {
-    update: function() {
-        const n = 1.0 * Math.round(100 * S.n);
-        const vecs = [];
-        const ortho = Mat.trans(Mat.orth2(Math.PI / 2));
-        vecs.push([0, 0], [1, 0]);
-        var tot = vecs[1];
-        for (var i = 0; i < n; i++) {
-            const addDir = Mat.prod([tot], ortho)[0];
-            const add = Mat.scale([addDir], (2 * Math.PI * S.theta)/n)[0];
-            tot = Mat.addVec(tot, add);
-            vecs.push(tot);
-        }
-        const tipToTail = []
-        for (var i = 0; i < vecs.length - 1; i++) {
-            tipToTail.push([vecs[i], vecs[i + 1]]);
-        }
-        setState('lst', tipToTail);
-    },
-
-    init: function() {
-        addInput(
-            getInput('theta', 0.5)
-        );
-        addInput(
-            getInput('n', 0.04)
-        );
-    },
-
-    draw: function() {
-        drawBackground();
-        const axes = getAxes();
-        logical.drawLineList(axes, 0.7);
-        logical.drawLineList(getXTicks(-100, 100, 0.3), 0.7);
-        logical.drawLineList(getYTicks(-100, 100, 0.3), 0.7);
-        for(var i = 0; i < S.lst.length; i++) {
-            logical.drawVec(S.lst[i][0], S.lst[i][1], {color: 'cyan'});
-        }
-    }
-
-}
 
 const main = function() {
-    G.config = inv;
+    G.config = new Pictures();
     setUpCanvas();
     init();
     update();
     draw();
-    //startRecording();
+    $("#record").click(startRecording);
+}
+
+const Pictures = function() {
+    const logical = Logical();
+    const logical2= Logical(
+        transform = function(v) {
+            return Mat.addVec([-3, 3], Mat.scale(Mat.prod([v], Mat.trans(Mat.orth2(S.o * (2 * Math.PI)))), 0.40)[0]);
+        },
+        transformWidth = function(w) {
+            return w * 0.4;
+        }
+    );
+    return {
+
+        update: function() {
+            const shiftScale = function(x) {
+                return 5 * (x - 0.5);
+            }
+            const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
+            const B = Mat.trans(Mat.inverse(A));
+            setState('A', A);
+            setState('B', B);
+        },
+
+        init: function() {
+            addInput(
+                getInput('o', 1)
+            );
+            addInput(
+                getInput('a', 1)
+            );
+            addInput(
+                getInput('b', 0.5)
+            );
+            addInput(
+                getInput('c', 0.5)
+            );
+            addInput(
+                getInput('d', 1)
+            );
+        },
+
+        draw: function() {
+            drawBackground();
+            const forAx = function(logical) {
+                const axes = getAxes(5);
+                logical.drawLineList(axes, 0.7);
+                logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
+                logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
+                for(var i = 0; i < S.A.length; i++) {
+                    logical.drawVecOrig(S.A[i], {color: 'orange'});
+                }
+                for(var i = 0; i < S.B.length; i++) {
+                    logical.drawVecOrig(S.B[i], {color: 'yellow'});
+                }
+            }
+            forAx(logical);
+            forAx(logical2);
+        }
+    }
 }
 
 function startRecording() {
