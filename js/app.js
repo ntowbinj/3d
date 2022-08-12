@@ -114,6 +114,7 @@ const getOrDefault = function(m, k, d) {
 }
 
 const hsvToRgb = function(hsv) {
+    return tinycolor(hsv).toString("rgb");
     return getOrDefault(
         getOrDefault(
             getOrDefault(
@@ -210,7 +211,7 @@ const updateLight = function() {
     setState(
         'lightDir',
         Mat.prod(
-            [[0, 0, -1]],
+            [[0, 0, 1]],
             Mat.prod(
                 Mat.counterClockXY(S.light_theta),
                 Mat.prod(
@@ -456,11 +457,29 @@ const Logical = function(
             }
         },
 
-        getTriangle: function(orig, proj, opts = {}) {
+        getTriangle: function(orig, proj, cam, opts = {}) {
             const options = this.copyOptions(opts);
             if (Mat.hasNull(proj)) {
                 return null;
             }
+
+            const aProj = Mat.subVec(proj[1], proj[0]);
+            const bProj = Mat.subVec(proj[2], proj[0]);
+            const projCross = Mat.normedCross(aProj, bProj);
+            if (opts.color.toName() === 'cyan') {
+                console.log('');
+                console.log('aProj');
+                console.log(aProj);
+                console.log('bProj');
+                console.log(bProj);
+                console.log('cross');
+                console.log(projCross);
+                console.log('');
+            }
+            if (projCross[Z] < 0) {
+                return null;
+            }
+
             const a = Mat.subVec(orig[1], orig[0]);
             const b = Mat.subVec(orig[2], orig[0]);
             const cross = Mat.normedCross(a, b);
@@ -472,10 +491,10 @@ const Logical = function(
                 options.alpha = 1.0;
             }
             const hsv = opts.color.toHsl();
-            hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
+            hsv.l = hsv.l * (0.1 + 0.9 * lightDot);
             //options.color = tinycolor(hsv).toString("rgb");
             options.color = hsvToRgb(hsv);
-            return [proj, options.color, options.alpha];
+            return [cam, options.color, options.alpha];
 
             //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
@@ -515,12 +534,12 @@ const Logical = function(
             const sorted = this.rotateAndDepthSortMeshes(meshes);
             const ret = [];
             for (var i = 0; i < sorted.length; i++) {
-                const triang = sorted[i][1];
-                const abs = triang.map(camera.projectRotated)
+                const rotated = sorted[i][1];
+                const abs = rotated.map(camera.projectRotated)
                     .map(camera.uninvert)
                     .map(physical.relToAbs);
                 const options = sorted[i][2];
-                const result = this.getTriangle(sorted[i][0], abs, options);
+                const result = this.getTriangle(sorted[i][0], rotated, abs, options);
                 if (result !== null) {
                     ret.push(result);
                 }
@@ -544,7 +563,7 @@ const Logical = function(
                     const rotated = triangles[j].mat(rotatedVerts);
                     const opt = triangles[j].opts;
                     const midP = this.midPoint(rotated);
-                    if (midP[Z] > -5000000) {
+                    if (midP[Z] > -5000) {
                         withZ.push([triangle, rotated, opt, midP[Z]]);
                     }
                 }

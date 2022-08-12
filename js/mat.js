@@ -122,12 +122,14 @@ const Mat = {
     },
 
     dot: function(v, w) {
-        if (G.collectStats) {
+        /*
+        if (G.collectStats) { // TODO this if slows this down by about 10%
             G.stats['dotCount'] = (G.stats['dotCount'] || 0) + 1;
         }
         if (v.length != w.length) {
             throw new Error("can't dot shapes " + v.length + " and " + w.length);
         }
+        */
         ret = 0;
         for (var i = 0; i < v.length; i++) {
             ret += v[i] * w[i];
@@ -247,10 +249,17 @@ const Mat = {
     },
 
     cross: function(a, b) {
+        /*
         return [
             a[X] * b[Y] - a[Y] * b[X],
             -1 * (a[X] * b[Z] - a[Z] * b[X]),
             a[Y] * b[Z] - a[Z] * b[Y]
+        ];
+        */
+        return [
+            a[Y] * b[Z] - a[Z] * b[Y],
+            -1 * (a[X] * b[Z] - a[Z] * b[X]),
+            a[X] * b[Y] - a[Y] * b[X]
         ];
     },
 
