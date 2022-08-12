@@ -26,13 +26,13 @@ const handleInputChange = function(name, value) {
 
 const init = function() {
     addInput(
-        getInput('cam_x', 0.5)
+        get01Input('cam_x', 0.5)
     );
     addInput(
-        getInput('cam_y', 0.5)
+        get01Input('cam_y', 0.5)
     );
     addInput(
-        getInput('cam_z', 0.4)
+        get01Input('cam_z', 0.4)
     );
     G.config.init();
     G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
@@ -43,6 +43,14 @@ const init = function() {
 const update = function() {
     setState('camera_pos', getPoint((S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9));
     G.config.update();
+}
+
+const toRange = function(s, e, t) {
+    return s + (e - s) * t;
+}
+
+const fromRange = function(s, e, t) {
+    return (t - s)/(e - s);
 }
 
 const getAxes = function(l) {
@@ -88,8 +96,14 @@ const draw = function() {
     G.config.draw();
 }
 
+const get01Input = function(name, initialValue = 0) {
+    return getInput(name, 0, 1, initialValue);
+}
 
-const getInput = function(name, initialValue = 0) {
+const getInput = function(name, s, e, initialValue = 0) {
+    if (s >= e) {
+        throw new Error('invalid input range: ' + s + ', ' + e);
+    }
     setState(name, initialValue);
     const id = 'input_' + name;
     return {
@@ -97,7 +111,9 @@ const getInput = function(name, initialValue = 0) {
         'handle': function(value) {handleInputChange(name, value)},
         'type': 'slider',
         'id': id,
-        'select': '#' + id
+        'select': '#' + id,
+        's': s,
+        'e': e
     }
 }
 
@@ -113,10 +129,10 @@ const addInput = function(input) {
     $("#inputs").append(domObj);
     $(input.select).slider({
         slide: function(event, ui) {
-            input.handle(ui.value / 100.0);
+            input.handle(toRange(input.s, input.e, ui.value / 100.0));
         }
     });
-    $(input.select).slider('value', S[input.name] * 100)
+    $(input.select).slider('value', fromRange(input.s, input.e, S[input.name]) * 100)
     $(input.select).slider('option', 'step', 0.5);
 
 }
@@ -517,22 +533,7 @@ const Pictures = function() {
     );
     const logicalRow = Logical(
         transform = function(v) {
-            return Mat.addVec([-2, -6], v);
-        }
-    );
-    const logicalP1 = Logical(
-        transform = function(v) {
-            return Mat.addVec([-14, 10], Mat.scaleVec(v, 1.2));
-        }
-    );
-    const logicalP2 = Logical(
-        transform = function(v) {
-            return Mat.addVec([-14, -0], Mat.scaleVec(v, 1.2));
-        }
-    );
-    const logicalP1P2 = Logical(
-        transform = function(v) {
-            return Mat.addVec([-14, -10], Mat.scaleVec(v, 1.2));
+            return Mat.addVec([-6, -6], v);
         }
     );
 
@@ -542,66 +543,35 @@ const Pictures = function() {
     return {
 
         update: function() {
-            const A = [[2, 2], [-4, 1]];
-            const x = [3, 1]
-            const shiftScale = function(x) {
-                return 10 * (x - 0.5);
-            }
-            const P1 = [[1, shiftScale(S.p1)], [0, 1]];
-            const P2 = [[1, 0], [shiftScale(S.p2), 1]];
-
-            const A_P1 = Mat.prod(A, P1);
-            const A_P1_P2 = Mat.prod(A_P1, P2);
-
-            const b = Mat.prod([x], A)[0];
-            const b_P1 = Mat.prod([b], P1)[0];
-            const b_P1_P2 = Mat.prod([b_P1], P2)[0];
-
-
-
-            setState('x', x);
-            setState('b', b);
-            setState('b_P1', b_P1);
-            setState('b_P1_P2', b_P1_P2);
+            const A = [[S.a, S.b], [S.c, S.d]];
             setState('A', A);
-            setState('A_P1', A_P1);
-            setState('A_P1_P2', A_P1_P2);
-            setState('P1', P1);
-            setState('P2', P2);
-            setState('P1_P2', Mat.prod(P1, P2));
         },
 
         init: function() {
             addInput(
-                getInput('p1', 0.5)
+                getInput('a', -10, 10, 1)
             );
             addInput(
-                getInput('p2', 0.5)
+                getInput('b', -10, 10, 0)
+            );
+            addInput(
+                getInput('c', -10, 10, 0)
+            );
+            addInput(
+                getInput('d', -10, 10, 1)
             );
         },
 
         draw: function() {
             drawBackground();
-            function columnPicture(logical) {
+            function columnPicture(log) {
                 const axes = getAxes(5);
-                const grid = getGrid(3);
-                const transGrid = Mat.prod(grid, S.A_P1_P2);
-                logical.drawLineList(axes, 0.7);
-                logical.drawLineList(transGrid, 0.4);
-                logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
-                logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-
-                logical.drawVecOrig(S.A[0], {color: 'yellow', alpha: 0.2});
-                logical.drawVecOrig(S.A[1], {color: 'orange', alpha: 0.2});
-                logical.drawVecOrig(S.b, {color: 'pink', alpha: 0.2});
-
-
-                logical.drawVecOrig(S.A_P1_P2[0], {color: 'yellow', width: width});
-                logical.drawVecOrig(Mat.nthComponent(S.A_P1_P2[0], 0), {color: 'yellow', width: 3});
-                logical.drawVecOrig(Mat.nthComponent(S.A_P1_P2[0], 1), {color: 'yellow', width: 3});
-
-                logical.drawVecOrig(S.A_P1_P2[1], {color: 'orange', width: width});
-                logical.drawVecOrig(S.b_P1_P2, {color: 'pink', width: width});
+                log.drawLineList(axes, 0.7);
+                log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
+                log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
+                const M = S.A;
+                log.drawVecOrig(M[0], {color: 'white', width: width});
+                log.drawVecOrig(M[1], {color: 'white', width: width});
             }
 
             function rowPicture(log) {
@@ -611,48 +581,14 @@ const Pictures = function() {
                 log.drawLineList(axes, 0.7);
                 log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-
-                function perVec(v, h, color, alpha) {
-                    const opts = {color:color, alpha: alpha, width: width};
-                    log.drawVecOrig(v, opts);
-                    const normed = Mat.normed(v);
-                    const intersect = Mat.scaleVec(v, h / Mat.squaredNorm(v));
-                    const orth = Mat.prod([normed], G.orthNeg90)[0];
-                    const s = Mat.addVec(intersect, Mat.scaleVec(orth, -5));
-                    const e = Mat.addVec(intersect, Mat.scaleVec(orth, 5));
-                    log.drawDashedLine(s, e, 1, opts);
-                }
-
-                function rep(A, b, alpha) {
-                    const v = Mat.trans(A)[0]
-                    const w = Mat.trans(A)[1];
-                    perVec(v, b[0], 'cyan', alpha);
-                    perVec(w, b[1], 'green', alpha);
-
-                }
-
-                rep(S.A, S.b, 0.2);
-                rep(S.A_P1_P2, S.b_P1_P2, 1);
+                const M = Mat.trans(S.A);
+                log.drawVecOrig(M[0], {color: 'white', width: width});
+                log.drawVecOrig(M[1], {color: 'white', width: width});
 
             }
             columnPicture(logicalCol);
             rowPicture(logicalRow);
 
-            const pivot = function(log, M) {
-                const size = 3;
-                const square = getSquare(size + 1);
-                log.drawShape(square, {color: '#331533'});
-                const axes = getAxes(size);
-                log.drawLineList(axes, 0.7);
-                log.drawLineList(getXTicks(-size, size, 0.3), 0.7);
-                log.drawLineList(getYTicks(-size, size, 0.3), 0.7);
-                log.drawVecOrig(M[0], {color: 'cyan'});
-                log.drawVecOrig(M[1], {color: 'lime'});
-            }
-
-            pivot(logicalP1, S.P1);
-            pivot(logicalP2, S.P2);
-            pivot(logicalP1P2, S.P1_P2);
         }
     }
 }
