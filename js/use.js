@@ -11,10 +11,10 @@ const Pictures = function() {
     const cb = icosahedron();
     const triangles = [];
     var id = 0;
-    for (var k = -100; k <= 10; k++) {
+    for (var k = -200; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
-                if (Math.random() > 0.9999) {
+                if (Math.random() > 0.99975) {
                     const randRot = Mat.prod(
                         Mat.counterClockXY(randAngle()),
                         Mat.prod(
