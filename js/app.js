@@ -3,6 +3,7 @@ const COLORS = {
 }
 COLOR = "color";
 THICK = "thick";
+DASHED = "dashed";
 
 const G = {};
  
@@ -148,8 +149,16 @@ const Logical = function(
             if (!(COLOR in options)) {
                 options[COLOR] = '#FFF';
             }
+            if (!(DASHED in options)) {
+                options[DASHED] = false;
+            }
             const actualWidth = this.physWidth(w, options);
-            physical.drawLineAbs(this.physPoint(s), this.physPoint(e), actualWidth, options.color);
+            physical.drawLine(this.physPoint(s), this.physPoint(e), actualWidth, options.color, options.dashed);
+        },
+
+        drawDashedLine: function(s, e, w, options = {}) {
+            options[DASHED] = true;
+            this.drawLine(s, e, w, options);
         },
 
         drawShape: function(pts, options = {}) {
@@ -193,7 +202,12 @@ const camera = {
 
 const physical = {
 
-    drawLineAbs: function(s, e, w, color) {
+    drawLine: function(s, e, w, color, dashed) {
+        if (dashed) {
+            G.ctx.setLineDash([10, 10]);
+        } else {
+            G.ctx.setLineDash([]);
+        }
         G.ctx.strokeStyle = color;
         G.ctx.lineWidth = w;
         G.ctx.beginPath();
@@ -474,6 +488,7 @@ const Pictures = function() {
                 for(var i = 0; i < S.B.length; i++) {
                     logical.drawVecOrig(S.B[i], {color: 'yellow'});
                 }
+                logical.drawDashedLine([0, 0], Mat.scaleVec(S.A[0], 5), 1);
             }
             forAx(logical);
             forAx(logical2);
