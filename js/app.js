@@ -526,65 +526,97 @@ const main = function() {
 }
 
 const Pictures = function() {
-    const logicalCol = Logical(
+    const trans = function(v) {
+        return Mat.prod([v], Mat.trans(Mat.orth2(S.q_ax * 2 * Math.PI)))[0];
+    }
+    const logical1 = Logical(
         transform = function(v) {
-            return Mat.addVec([6, 6], v);
+            return Mat.addVec(trans(v), [6, 6]);
         }
     );
-    const logicalRow = Logical(
+    const logical2 = Logical(
         transform = function(v) {
-            return Mat.addVec([-6, -6], v);
+            return Mat.addVec(trans(v), [-6, -6]);
         }
     );
-    const logicalSymm = Logical(
-        transform = function(v) {
-            return Mat.addVec([7, -6], v);
-        }
-    );
-
-
-    const width = 7;
-
     return {
 
         update: function() {
-            const A = [[S.a, S.b], [S.c, S.d]];
+            const shiftScale = function(x) {
+                return 10 * (x - 0.5);
+            }
+            const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
+            const v = A[0];
+            const w = A[1];
+            const wOrth = Mat.normed(Mat.prod([w], G.orthNeg90)[0]);
+            const vSheered = Mat.addVec(v, Mat.scaleVec(wOrth, 20 * (S.s - 0.5)));
+            A[0] = vSheered;
+
             setState('A', A);
         },
 
         init: function() {
             addInput(
-                getInput('a', -10, 10, 1)
+                get01Input('a', 1)
             );
             addInput(
-                getInput('b', -10, 10, 0)
+                get01Input('b', 0.5)
             );
             addInput(
-                getInput('c', -10, 10, 0)
+                get01Input('c', 0.5)
             );
             addInput(
-                getInput('d', -10, 10, 1)
+                get01Input('d', 1)
+            );
+            addInput(
+                get01Input('s', 0.5)
+            );
+            addInput(
+                get01Input('q', 0)
+            );
+            addInput(
+                get01Input('q_ax', 0)
             );
         },
 
         draw: function() {
             drawBackground();
-
-            function picture(log, M, color) {
-                const square = getSquare(6);
-                log.drawShape(square, {color: color});
+            const go = function(log, A, c1, c2) {
                 const axes = getAxes(5);
+                const grid = getGrid(5);
                 log.drawLineList(axes, 0.7);
+                //log.drawLineList(grid, 0.4);
                 log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                log.drawVecOrig(M[0], {color: 'white', width: width});
-                log.drawVecOrig(M[1], {color: 'white', width: width});
-
+                log.drawVecOrig(A[0], {color: c1, width: 5});
+                log.drawVecOrig(A[1], {color: c2});
+                const v = A[0]
+                const w = A[1]
+                const vx = [v[0], 0]
+                const vy = [0, v[1]];
+                const wUnit = Mat.normed(w);
+                const wOrth = Mat.normed(Mat.prod([w], G.orth90)[0]);
+                const wGrid = Mat.prod(grid, [wUnit, Mat.prod([wUnit], G[ORTH90])[0]]);
+                log.drawLineList(wGrid, 0.3, {color: c2});
+                const projVxWOrth = Mat.proj(vx, wOrth);
+                const projVxW = Mat.proj(vx, w);
+                const projVyW = Mat.proj(vy, w);
+                const projVySummed = Mat.addVec(projVyW, vx);
+                const projVW = Mat.proj(v, w);
+                log.drawDashedLine(Mat.scaleVec(w, 10), Mat.scaleVec(w, -10), 1, {color: c2});
+                //log.drawDashedLine(v, vx, 1);
+                log.drawVecOrig(vx, {color: c1, width: 1.5});
+                log.drawVec(vx, v, {color: c1, width: 1.5});
+                log.drawDashedLine([0, 0], projVxWOrth, 1);
+                log.drawDashedLine(projVxWOrth, vx, 1);
+                log.drawDashedLine(projVxW, vx, 1);
+                log.drawDashedLine(vx, projVySummed, 1);
+                log.drawDashedLine(v, projVySummed, 1);
+                log.drawDashedLine(projVW, v, 1);
             }
-            picture(logicalCol, S.A, COLORS.background);
-            picture(logicalRow, Mat.trans(S.A), '#224');
-            picture(logicalSymm, Mat.prod(S.A, Mat.trans(S.A)), '#242');
-
+            const A = Mat.prod(S.A, Mat.trans(Mat.orth2(2 * Math.PI * S.q)));
+            go(logical1, A, 'yellow', 'orange');
+            go(logical2, [A[1], A[0]], 'orange', 'yellow');
         }
     }
 }
