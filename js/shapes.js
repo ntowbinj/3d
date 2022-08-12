@@ -44,98 +44,49 @@ const Tri = function(vertIdxs, opts) {
     };
 };
 
-const cube = function() {
-    const base = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
-    const cube = [];
-    const face = [];
-    face.push(base);
-    face.push(
-        Mat.translateRecursive(
-            Mat.prod(
-                base,
-                Mat.counterClockXY(-1 * Math.PI)
-            ),
-            [1, 1, 0]
-        )
-    );
-    cube.push.apply(cube, face);
-    cube.push.apply(
-        cube,
-        Mat.translateRecursive(
-            Mat.prodRecursive(
-                face, 
-                Mat.counterClockXZ(-0.5 * Math.PI)
-            ),
-            [0, 0, -1]
-        )
-    );
-    cube.push.apply(
-        cube,
-        Mat.translateRecursive(
-            Mat.prodRecursive(
-                face, 
-                Mat.counterClockYZ(0.5 * Math.PI)
-            ),
-            [0, 0, -1]
-        )
-    );
-    const rotted = Mat.prodRecursive(
-        cube, 
-        Mat.counterClockXZ(Math.PI)
-    );
-    const otherHalf = Mat.translateRecursive(
-        Mat.prodRecursive(
-            rotted,
-            Mat.counterClockYZ(0.5 * Math.PI)
-        ),
-        [1, 1, -1]
-    );
-    cube.push.apply(
-        cube,
-        otherHalf
-    );
-    return cube;
-};
-
-const icosahedron = function() {
-    const t = (1 + Math.sqrt(5)) / 2;
+const cube = function(opts) {
     const v = [];
-    v.push(Mat.normed([-1.0,  t, 0.0]));
-    v.push(Mat.normed([ 1.0,  t, 0.0]));
-    v.push(Mat.normed([-1.0, -t, 0.0]));
-    v.push(Mat.normed([ 1.0, -t, 0.0]));
-    v.push(Mat.normed([0.0, -1.0,  t]));
-    v.push(Mat.normed([0.0,  1.0,  t]));
-    v.push(Mat.normed([0.0, -1.0, -t]));
-    v.push(Mat.normed([0.0,  1.0, -t]));
-    v.push(Mat.normed([ t, 0.0, -1.0]));
-    v.push(Mat.normed([ t, 0.0,  1.0]));
-    v.push(Mat.normed([-t, 0.0, -1.0]));
-    v.push(Mat.normed([-t, 0.0,  1.0]));
+    v.push(
+        [0, 0, 0], // 0
+        [0, 0, 1], // 1
+        [0, 1, 0], // 2
+        [0, 1, 1], // 3
+        [1, 0, 0], // 4
+        [1, 0, 1], // 5
+        [1, 1, 0], // 6
+        [1, 1, 1] // 7
+    );
 
-    const triangs = [];
-    triangs.push([v[0], v[11], v[5]]);
-    triangs.push([v[0], v[5], v[1]]);
-    triangs.push([v[0], v[1], v[7]]);
-    triangs.push([v[0], v[7], v[10]]);
-    triangs.push([v[0], v[10], v[11]]);
-    triangs.push([v[1], v[5], v[9]]);
-    triangs.push([v[5], v[11], v[4]]);
-    triangs.push([v[11], v[10], v[2]]);
-    triangs.push([v[10], v[7], v[6]]);
-    triangs.push([v[7], v[1], v[8]]);
-    triangs.push([v[3], v[9], v[4]]);
-    triangs.push([v[3], v[4], v[2]]);
-    triangs.push([v[3], v[2], v[6]]);
-    triangs.push([v[3], v[6], v[8]]);
-    triangs.push([v[3], v[8], v[9]]);
-    triangs.push([v[4], v[9], v[5]]);
-    triangs.push([v[2], v[4], v[11]]);
-    triangs.push([v[6], v[2], v[10]]);
-    triangs.push([v[8], v[6], v[7]]);
-    triangs.push([v[9], v[8], v[1]]);
+    const verts = Verteces(v);
 
-    return triangs;
+    const t = [];
+    t.push(
+        [1, 5, 3],
+        [7, 3, 5],
+
+        [0, 1, 2],
+        [3, 2, 1],
+
+        [0, 4, 1],
+        [5, 1, 4],
+
+        [0, 2, 4],
+        [6, 4, 2],
+
+        [5, 4, 7],
+        [6, 7, 4],
+
+        [2, 3, 6],
+        [7, 6, 3]
+    );
+
+    const tr = [];
+    for (var i = 0; i < t.length; i++) {
+        tr.push(Tri(t[i], opts));
+    }
+
+    return Mesh(verts, tr);
+
 };
 
 const icosahedronMesh = function(opts) {
