@@ -7,13 +7,14 @@ const Pictures = function() {
 
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
-    const cb = cube();
+    //const cb = icosahedron();
+    const cb = icosahedron();
     const triangles = [];
     var id = 0;
-    for (var k = -200; k <= 10; k++) {
+    for (var k = -100; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
-                if (Math.random() > 0.99975) {
+                if (Math.random() > 0.9999) {
                     const randRot = Mat.prod(
                         Mat.counterClockXY(randAngle()),
                         Mat.prod(
