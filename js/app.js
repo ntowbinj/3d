@@ -547,16 +547,11 @@ const Logical = function(
                     const triangle = triangles[j].mat(verts);
                     const rotated = triangles[j].mat(rotatedVerts);
                     let opt = triangles[j].opts;
-                    const midP = midPoint(rotated);
-
-                    const aRot = Mat.subVec(rotated[1], rotated[0]);
-                    const bRot = Mat.subVec(rotated[2], rotated[0]);
-                    const rotatedCross = Mat.cross(aRot, bRot);
-                    const rotCrossDot = Mat.dot(rotatedCross, rotated[0]);
-                    const visible = rotCrossDot < 0;
+                    const visible = Mat.det3(rotated) < 0;
                     if (!visible) {
                         continue;
                     }
+                    const midP = midPoint(rotated);
                     if (midP[Z] > -5000) {
                         withZ.push([triangle, rotated, opt, midP[Z]]);
                     }

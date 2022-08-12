@@ -93,7 +93,6 @@ const cube = function(opts) {
 const icosahedronMesh = function(opts, id = -1) {
     const t = (1 + Math.sqrt(5)) / 2;
     const v = [];
-    triId = 0; // TODO remove
     v.push(Mat.normed([-1.0,  t, 0.0]));
     v.push(Mat.normed([ 1.0,  t, 0.0]));
     v.push(Mat.normed([-1.0, -t, 0.0]));
