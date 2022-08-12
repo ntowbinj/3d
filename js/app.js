@@ -109,9 +109,12 @@ const logical = {
     },
 
     drawVec: function(s, e, options = {}) {
+        if (!(THICK in options)) {
+            options[THICK] = true;
+        }
         const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
         const norm = Mat.norm(posVec);
-        const lengthRatio = 0.1/(1 + Math.log(1 + norm/5));
+        const lengthRatio = 0.2/(1 + Math.log(1 + norm/5));
         const segment = Mat.scaleVec(posVec, lengthRatio);
         const triangIntersectVec = Mat.addVec(e, Mat.scaleVec(segment, -1));
         const leftAdd = Mat.scaleVec(Mat.trans(Mat.prod(Mat.orth2(Math.PI/2), Mat.trans([segment])))[0], 0.7/Math.tan(Math.PI/3));
@@ -121,24 +124,25 @@ const logical = {
             Mat.addVec(triangIntersectVec, leftAdd),
             Mat.addVec(triangIntersectVec, rightAdd)
         ];
-        logical.drawLine(s, e, options);
+        logical.drawLine(s, Mat.addVec(e, Mat.scaleVec(segment, -1)), 3, options);
         logical.drawShape(triang, options);
     },
 
-    drawLineList: function(l, options = {}) {
+    drawLineList: function(l, w, options = {}) {
         if ((l.length % 2) != 0) {
             throw new Error('need even number of points for line list');
         }
         for (var i = 0; i < l.length / 2; i++) {
-            logical.drawLine(l[i * 2], l[(i * 2) + 1], options);
+            logical.drawLine(l[i * 2], l[(i * 2) + 1], w,  options);
         }
     },
 
-    drawLine: function(s, e, options = {}) {
+    drawLine: function(s, e, w, options = {}) {
         if (!(COLOR in options)) {
             options[COLOR] = '#FFF';
         }
-        physical.drawLineAbs(logical.physPoint(s), logical.physPoint(e), options.color);
+        const actualWidth = options.thick ? Math.max(2, w * (1/S.camera_pos.z)) : w;
+        physical.drawLineAbs(logical.physPoint(s), logical.physPoint(e), actualWidth, options.color);
     },
 
     drawShape: function(pts, options = {}) {
@@ -177,9 +181,9 @@ const camera = {
 
 const physical = {
 
-    drawLineAbs: function(s, e, color) {
+    drawLineAbs: function(s, e, w, color) {
         G.ctx.strokeStyle = color;
-        G.ctx.lineWidth = 2;
+        G.ctx.lineWidth = w;
         G.ctx.beginPath();
         const fixedS = physical.fixPointForCanvas(s);
         const fixedE = physical.fixPointForCanvas(e);
@@ -189,12 +193,6 @@ const physical = {
     },
 
     fixPointForCanvas: function(pt) {
-        /*
-        return getPoint(
-            Math.min(Math.max(pt.x + 0.5, 0), G.canvas.width),
-            Math.min(Math.max(pt.y, 0), G.canvas.height)
-        );
-        */
         return getPoint(pt.x + 0.5, pt.y);
     },
 
@@ -411,9 +409,9 @@ const euler = {
     draw: function() {
         drawBackground();
         const axes = getAxes();
-        logical.drawLineList(axes);
-        logical.drawLineList(getXTicks(-100, 100, 0.3));
-        logical.drawLineList(getYTicks(-100, 100, 0.3));
+        logical.drawLineList(axes, 0.7);
+        logical.drawLineList(getXTicks(-100, 100, 0.3), 0.7);
+        logical.drawLineList(getYTicks(-100, 100, 0.3), 0.7);
         for(var i = 0; i < S.lst.length; i++) {
             logical.drawVec(S.lst[i][0], S.lst[i][1], {color: 'cyan'});
         }
