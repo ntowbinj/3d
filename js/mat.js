@@ -227,12 +227,17 @@ const Mat = {
         );
     },
 
-    det: function(A) {
-        const shape = Mat.shape(A);
-        if ((shape[0] != 2) || (shape[1] != 2)) {
-            throw new Error("det only supported on 2x2, this is " + shape);
-        }
+    det2: function(A) {
         return (A[0][0] * A[1][1]) - (A[0][1] * A[1][0]);
+    },
+
+    det3: function(A) {
+        return this.dot(A[0], this.cross(A[1], A[2]));
+        /*
+        return (A[0][0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]))
+            + (A[0][1] * (A[1][2] * A[2][0] - A[1][0] * A[2][2]))
+        + (A[0][2] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]));
+        */
     },
 
     cofactors: function(A) {

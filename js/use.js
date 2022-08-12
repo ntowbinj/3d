@@ -16,7 +16,7 @@ const Pictures = function() {
     for (var k = -400; k <= 10; k++) {
         for (var i = -50; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99990) {
+                if (Math.random() > 0.99970) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
                     const vertsTrans = Mat.translateRecursive(
