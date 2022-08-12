@@ -32,7 +32,7 @@ const init = function() {
         getInput('cam_y', 0.5)
     );
     addInput(
-        getInput('cam_z', 0.3)
+        getInput('cam_z', 0.4)
     );
     G.config.init();
     G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
@@ -47,6 +47,10 @@ const update = function() {
 
 const getAxes = function(l) {
     return [[-1 * l, 0], [l, 0], [0, -1 * l], [0, l]];
+}
+
+const getSquare = function(l) {
+    return [[-1 * l, l], [l, l], [l, -1 * l], [-1 * l, -1 * l]];
 }
 
 const getGrid = function(l) {
@@ -113,6 +117,7 @@ const addInput = function(input) {
         }
     });
     $(input.select).slider('value', S[input.name] * 100)
+    $(input.select).slider('option', 'step', 0.5);
 
 }
 
@@ -141,7 +146,7 @@ const Logical = function(
                 options[THICK] = true;
             }
             if (!(WIDTH  in options)) {
-                options[WIDTH] = 3;
+                options[WIDTH] = 5;
             }
             const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
             const norm = Mat.norm(posVec);
@@ -308,6 +313,7 @@ const setUpCanvas = function() {
 }
 
 const drawBackground = function() {
+    G.ctx.globalAlpha = 1;
     G.ctx.fillStyle = COLORS.background;
     G.ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
@@ -434,12 +440,30 @@ const Mat = {
         return Mat.scaleVec(w, Mat.dot(v, w) / Mat.dot(w, w));
     },
 
+    squaredNorm: function(v) {
+        return Mat.dot(v, v);
+    },
+
     norm: function(v) {
-        return Math.sqrt(Mat.dot(v, v));
+        return Math.sqrt(Mat.squaredNorm(v));
     },
 
     normed: function(v) {
         return Mat.scaleVec(v, 1/Mat.norm(v));
+    },
+
+    nthComponent: function(v, n) {
+        const zeros = Mat.zeros(v.length);
+        zeros[n] = v[n];
+        return zeros;
+    },
+
+    zeros: function(n) {
+        const ret = []
+        for (var i = 0; i < n; i++) {
+            ret.push(0);
+        }
+        return ret;
     },
 
     convComb: function(A, B, c) {
@@ -486,11 +510,35 @@ const main = function() {
 }
 
 const Pictures = function() {
-    const logical1 = Logical(
+    const logicalCol = Logical(
         transform = function(v) {
-            return Mat.addVec([4, 4], v);
+            return Mat.addVec([6, 6], v);
         }
     );
+    const logicalRow = Logical(
+        transform = function(v) {
+            return Mat.addVec([-2, -6], v);
+        }
+    );
+    const logicalP1 = Logical(
+        transform = function(v) {
+            return Mat.addVec([-14, 10], Mat.scaleVec(v, 1.2));
+        }
+    );
+    const logicalP2 = Logical(
+        transform = function(v) {
+            return Mat.addVec([-14, -0], Mat.scaleVec(v, 1.2));
+        }
+    );
+    const logicalP1P2 = Logical(
+        transform = function(v) {
+            return Mat.addVec([-14, -10], Mat.scaleVec(v, 1.2));
+        }
+    );
+
+
+    const width = 7;
+
     return {
 
         update: function() {
@@ -520,6 +568,7 @@ const Pictures = function() {
             setState('A_P1_P2', A_P1_P2);
             setState('P1', P1);
             setState('P2', P2);
+            setState('P1_P2', Mat.prod(P1, P2));
         },
 
         init: function() {
@@ -541,30 +590,69 @@ const Pictures = function() {
                 logical.drawLineList(transGrid, 0.4);
                 logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
+
                 logical.drawVecOrig(S.A[0], {color: 'yellow', alpha: 0.2});
                 logical.drawVecOrig(S.A[1], {color: 'orange', alpha: 0.2});
                 logical.drawVecOrig(S.b, {color: 'pink', alpha: 0.2});
-                logical.drawVecOrig(S.A_P1_P2[0], {color: 'yellow'});
-                logical.drawVecOrig(S.A_P1_P2[1], {color: 'orange'});
-                logical.drawVecOrig(S.b_P1_P2, {color: 'pink'});
+
+
+                logical.drawVecOrig(S.A_P1_P2[0], {color: 'yellow', width: width});
+                logical.drawVecOrig(Mat.nthComponent(S.A_P1_P2[0], 0), {color: 'yellow', width: 3});
+                logical.drawVecOrig(Mat.nthComponent(S.A_P1_P2[0], 1), {color: 'yellow', width: 3});
+
+                logical.drawVecOrig(S.A_P1_P2[1], {color: 'orange', width: width});
+                logical.drawVecOrig(S.b_P1_P2, {color: 'pink', width: width});
             }
 
-            function rowPicture(logical) {
+            function rowPicture(log) {
+                const square = getSquare(6);
+                log.drawShape(square, {color: '#225'});
                 const axes = getAxes(5);
-                const grid = getGrid(5);
-                const transGrid = Mat.prod(grid, S.A_P1_P2);
-                logical.drawLineList(axes, 0.7);
-                logical.drawLineList(transGrid, 0.4);
-                logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
-                logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                logical.drawVecOrig(S.A[0], {color: 'yellow', alpha: 0.2});
-                logical.drawVecOrig(S.A[1], {color: 'orange', alpha: 0.2});
-                logical.drawVecOrig(S.b, {color: 'pink', alpha: 0.2});
-                logical.drawVecOrig(S.A_P1_P2[0], {color: 'yellow'});
-                logical.drawVecOrig(S.A_P1_P2[1], {color: 'orange'});
-                logical.drawVecOrig(S.b_P1_P2, {color: 'pink'});
+                log.drawLineList(axes, 0.7);
+                log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
+                log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
+
+                function perVec(v, h, color, alpha) {
+                    const opts = {color:color, alpha: alpha, width: width};
+                    log.drawVecOrig(v, opts);
+                    const normed = Mat.normed(v);
+                    const intersect = Mat.scaleVec(v, h / Mat.squaredNorm(v));
+                    const orth = Mat.prod([normed], G.orthNeg90)[0];
+                    const s = Mat.addVec(intersect, Mat.scaleVec(orth, -5));
+                    const e = Mat.addVec(intersect, Mat.scaleVec(orth, 5));
+                    log.drawDashedLine(s, e, 1, opts);
+                }
+
+                function rep(A, b, alpha) {
+                    const v = Mat.trans(A)[0]
+                    const w = Mat.trans(A)[1];
+                    perVec(v, b[0], 'cyan', alpha);
+                    perVec(w, b[1], 'green', alpha);
+
+                }
+
+                rep(S.A, S.b, 0.2);
+                rep(S.A_P1_P2, S.b_P1_P2, 1);
+
             }
-            columnPicture(logical1);
+            columnPicture(logicalCol);
+            rowPicture(logicalRow);
+
+            const pivot = function(log, M) {
+                const size = 3;
+                const square = getSquare(size + 1);
+                log.drawShape(square, {color: '#331533'});
+                const axes = getAxes(size);
+                log.drawLineList(axes, 0.7);
+                log.drawLineList(getXTicks(-size, size, 0.3), 0.7);
+                log.drawLineList(getYTicks(-size, size, 0.3), 0.7);
+                log.drawVecOrig(M[0], {color: 'cyan'});
+                log.drawVecOrig(M[1], {color: 'lime'});
+            }
+
+            pivot(logicalP1, S.P1);
+            pivot(logicalP2, S.P2);
+            pivot(logicalP1P2, S.P1_P2);
         }
     }
 }
