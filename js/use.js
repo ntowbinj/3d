@@ -14,12 +14,12 @@ const Pictures = function() {
     let shapes = [];
     var id = 0;
     for (var k = -500; k <= 10; k++) {
-        for (var i = -400; i <= 50; i++) {
-            for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99996) {
+        for (var i = -300; i <= 50; i++) {
+            for (var j = -100; j <= 100; j++) {
+                if (Math.random() > 0.99998) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = 0.6 * samplePareto(.001 + Math.random());
+                    const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
                     const vertsTrans = shape.verteces
                         .unitaryTransformation(randRot)
                         .scale(s)
