@@ -544,7 +544,7 @@ const Logical = function(
                     const rotated = triangles[j].mat(rotatedVerts);
                     const opt = triangles[j].opts;
                     const midP = this.midPoint(rotated);
-                    if (midP[Z] > -500) {
+                    if (midP[Z] > -5000000) {
                         withZ.push([triangle, rotated, opt, midP[Z]]);
                     }
                 }
@@ -745,17 +745,17 @@ const sigmoid = function(s) {
 function anim() {
     doAnimate(
         function(t) {
-            setState('cam_z', ((1 - t) * 200));
-            setState('beta', -1 * t * 0.02 * Math.PI * 2);
-            setState('alpha', -1 * t * 0.05 * Math.PI * 2);
-            setState('cam_y', 20 * sigmoid(t * 50 - 25));
+            setState('cam_z', ((1 - t) * 200 - 80));
+            setState('beta', -1 * t * 0.02 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 30 - 25));
+            setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
+            setState('cam_y', 20 * sigmoid(t * 50 - 20) + 50 * sigmoid(t * 30 - 20));
             setState('theta',  Math.PI * 0.2 * sigmoid(t * 40 - 18));
-            setState('cam_x', t * -20);
-            setState('focalLength', 22 - 8 * sigmoid(t * 20 - 11));
+            setState('cam_x', t * -30);
+            setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },
-        600,
+        100,
         50
     );
 }
@@ -765,7 +765,7 @@ const sampleExp = function(lambda, x) {
 }
 
 const samplePareto = function(x) {
-    return 1 / (Math.pow(x, 1/0.3))
+    return 1 / (Math.pow(x, 0.70))
 }
 
 const gauss = function(x, d) {
