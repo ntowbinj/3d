@@ -135,14 +135,16 @@ const log = {
 
 const updateAndDraw = function() {
     const perfNow = window.performance.now();
-    const now = Date.now();
-    if (S.lastUpdated > 0 && (now - S.lastUpdated < 50)) {
+    if (S.lastUpdated > 0 && (perfNow - S.lastUpdated < 10)) {
         if (G.collectStats) {
             G.stats['skippedFrameCount'] = (G.stats['skippedFrameCount'] || 0) + 1;
         }
         return;
     }
-    S.lastUpdated = now;
+    if (G.collectStats) {
+        getOrDefault(G.stats, 'frameTimes', function() { return []; }).push(perfNow);
+    }
+    S.lastUpdated = perfNow;
     update();
     draw();
     if (G.collectStats) {
@@ -174,6 +176,14 @@ const stdev = function(arr) {
     }
     return (sum / arr.length) - Math.pow(mn, 2);
 };
+
+const difference = function(a) {
+    var ret = [];
+    for (var i = 0; i < a.length - 1; i++) {
+        ret.push(a[i + 1] - a[i]);
+    }
+    return ret;
+}
 
 const updateCamera = function() {
     setState('camera_pos', [S.cam_x, S.cam_y, S.cam_z]);
@@ -795,10 +805,12 @@ const animate = function(f, n, k, r) {
         G.animate = false;
         return;
     }
+    const start = window.performance.now();
     f(k/n);
+    const elapsed = window.performance.now() - start;
     setTimeout(function() {
         animate(f, n, k + 1, r)
-    }, r);
+    }, Math.max(r - elapsed, 0));
 }
 
 const doAnimate = function(f, n, r) {
@@ -817,20 +829,36 @@ const sigmoid = function(s) {
     return 1 / (1 + Math.exp(-1 * s));
 }
 
+const anOtherAnimation = function(t) {
+    //setState('cam_z', ((1 - t) * 100 - 80));
+    setState('cam_z',   (1 - t) * 250 - 200 + (-1400 * sigmoid(t * 50 - 40)));
+    setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2 + Math.PI * 0.2 * sigmoid(t * 40 - 30));
+    setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
+    setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
+    setState('cam_x', t * 80 + (-1600 * sigmoid(t * 70 - 60)));
+    setState('cam_y', sigmoid(t * 20 - 15) * 30);
+    setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
+    updateAndDraw();
+};
+
+const anAnimation = function(t) {
+    //setState('cam_z', ((1 - t) * 100 - 80));
+    setState('cam_z',    t * (-200 * sigmoid(t * 10 - 5)));
+    //setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2 + Math.PI * 0.2 * sigmoid(t * 40 - 30));
+    //setState('beta', Math.PI * 0.2 * sigmoid(t * 30 - 20));
+    //setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
+    //setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
+    //setState('cam_x', t * 80 + (-1600 * sigmoid(t * 70 - 60)));
+    //setState('cam_x', t * t * t * (-1600 * sigmoid(t * 50 - 40)));
+    //setState('cam_y', sigmoid(t * 20 - 15) * 30);
+    //setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
+    updateAndDraw();
+};
+
+
 function anim() {
     doAnimate(
-        function(t) {
-            //setState('cam_z', ((1 - t) * 100 - 80));
-            setState('cam_z',   (1 - t) * 250 - 200 + -700 * sigmoid(t * 50 - 40));
-            setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2 + Math.PI * 0.2 * sigmoid(t * 40 - 30));
-            setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
-            setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
-            //setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
-            setState('cam_x', t * 80 + -800 * sigmoid(t * 70 - 60));
-            setState('cam_y', sigmoid(t * 20 - 15) * 30);
-            setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
-            updateAndDraw();
-        },
+        anAnimation,
         150,
         50
     );
