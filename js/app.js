@@ -119,7 +119,7 @@ const hsvToRgb = function(hsv) {
             Math.floor(hsv.s),
             function(){return {};}
         ),
-        Math.floor(10 * hsv.l),
+        Math.floor(40 * hsv.l),
         function() {
             return tinycolor(hsv).toString("rgb");
         }
@@ -452,7 +452,7 @@ const Logical = function(
                 options.alpha = 1.0;
             }
             const hsv = opts.color.toHsl();
-            hsv.l = hsv.l * (0.5 + 0.5 * lightDot);
+            hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
             //options.color = tinycolor(hsv).toString("rgb");
             options.color = hsvToRgb(hsv);
             return [proj, options.color, options.alpha];
@@ -495,12 +495,12 @@ const Logical = function(
             const sorted = this.rotateAndDepthSort(trngs);
             const ret = [];
             for (var i = 0; i < sorted.length; i++) {
-                const triang = sorted[i][0];
+                const triang = sorted[i][1];
                 const abs = triang.map(camera.projectRotated)
                     .map(camera.uninvert)
                     .map(physical.relToAbs);
-                const options = sorted[i][1];
-                const result = this.getTriangle(triang, abs, options);
+                const options = sorted[i][2];
+                const result = this.getTriangle(sorted[i][0], abs, options);
                 if (result !== null) {
                     ret.push(result);
                 }
@@ -518,7 +518,7 @@ const Logical = function(
                     .map(camera.rotate);
                 const midP = this.midPoint(rotated);
                 if (midP[Z] > -500) {
-                    withZ.push([rotated, opt, midP[Z]]);
+                    withZ.push([triangle, rotated, opt, midP[Z]]);
                 }
             }
             return this.sort(withZ);
@@ -526,10 +526,10 @@ const Logical = function(
 
         sort: function(withZ) {
             withZ.sort(function(a, b) {
-                if (a[2] < b[2]) {
+                if (a[3] < b[3]) {
                     return -1;
                 }
-                if (a[2] > b[2]) {
+                if (a[3] > b[3]) {
                     return 1;
                 }
                 return 0;
@@ -717,14 +717,13 @@ const sigmoid = function(s) {
 function anim() {
     doAnimate(
         function(t) {
-            setState('cam_z', ((1 - t) * 1000 - 400));
-            setState('beta', t * 0.02 * Math.PI * 2 + 2 * sigmoid(t * 40 - 30));
-            setState('alpha', t * 0.05 * Math.PI * 2);
-            setState('theta', t * 0.05 * Math.PI * 2);
-            setState('cam_y', 30 * sigmoid(t * 50 - 25));
-            setState('theta', Math.PI * 0.2 * sigmoid(t * 40 - 18));
-            setState('cam_x', t * -30);
-            setState('focalLength', 22 - 21 * sigmoid(t * 20 - 11));
+            setState('cam_z', ((1 - t) * 200));
+            setState('beta', -1 * t * 0.02 * Math.PI * 2);
+            setState('alpha', -1 * t * 0.05 * Math.PI * 2);
+            setState('cam_y', 20 * sigmoid(t * 50 - 25));
+            setState('theta',  Math.PI * 0.2 * sigmoid(t * 40 - 18));
+            setState('cam_x', t * -20);
+            setState('focalLength', 22 - 8 * sigmoid(t * 20 - 11));
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },
@@ -748,7 +747,6 @@ const gauss = function(x, d) {
 
 function startRecording() {
     anim();
-    return;
     const chunks = []; // here we will store our recorded media chunks (Blobs)
     const stream = canvas.captureStream(); // grab our canvas MediaStream
     const rec = new MediaRecorder(stream); // init the recorder

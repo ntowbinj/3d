@@ -70,11 +70,10 @@ const Pictures = function() {
     );
     const triangles = [];
     var id = 0;
-        /*
-    for (var k = -200; k <= -150; k++) {
+    for (var k = -200; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
-                if (Math.random() > 0.999) {
+                if (Math.random() > 0.99975) {
                     const color = tinycolor.random();
                     const randRot = Mat.prod(
                         Mat.counterClockXY(randAngle()),
@@ -104,7 +103,6 @@ const Pictures = function() {
             }
         }
     }
-    */
     shuffle(triangles);
     return {
 
@@ -115,24 +113,10 @@ const Pictures = function() {
         },
 
         draw: function() {
-            const color = tinycolor('cyan');
-            const rot = Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta);
-            const theCube = Mat.prodRecursive(cube, rot);
-            const trangs = [];
-            for (var c = 0; c < theCube.length; c++) {
-                id += 1;
-                trangs.push(
-                    triang(
-                        theCube[c],
-                        {color: color},
-                        id
-                    )
-                );
-            }
             drawBackground();
-            const allTriangs = logical.getAllTriangles(trangs);
+            const allTriangs = logical.getAllTriangles(triangles);
             physical.draw(allTriangs);
-            logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(Mat.prodRecursive(v, rot), [0, 0, 0])), {color: 'white'});
+            logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
         }
     }
 };
