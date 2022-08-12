@@ -4,6 +4,11 @@
     width: 15%;
 }
 
+#record {
+    font-size: 20;
+    margin-top: 40%;
+}
+
 #output {
     padding: 2%;
     float: right;
