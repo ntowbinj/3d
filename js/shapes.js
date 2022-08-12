@@ -1,7 +1,8 @@
-const Mesh = function(verteces, triangles) {
+const Mesh = function(verteces, triangles, id = -1) {
     return {
         verteces: verteces,
-        triangles: triangles
+        triangles: triangles,
+        id: id
     };
 };
 
@@ -89,7 +90,7 @@ const cube = function(opts) {
 
 };
 
-const icosahedronMesh = function(opts) {
+const icosahedronMesh = function(opts, id = -1) {
     const t = (1 + Math.sqrt(5)) / 2;
     const v = [];
     v.push(Mat.normed([-1.0,  t, 0.0]));
@@ -130,5 +131,5 @@ const icosahedronMesh = function(opts) {
     triangs.push(Tri([8, 6, 7], opts));
     triangs.push(Tri([9, 8, 1], opts));
 
-    return Mesh(verts, triangs);
+    return Mesh(verts, triangs, id);
 };

@@ -29,18 +29,6 @@ const G = {};
 
 const S = {};
 
-const triang = function(verts, opts, id = -1) {
-    const a = Mat.subVec(verts[1], verts[0]);
-    const b = Mat.subVec(verts[2], verts[0]);
-    const cross = Mat.normedCross(a, b);
-    return {
-        verts: verts,
-        opts: opts,
-        normal: cross,
-        id: id
-    };
-}
-
 const applyDebug = function(name, value) {
     setState(name, value);
     updateAndDraw();
@@ -97,6 +85,7 @@ const init = function() {
     G.timingBuffer = [];
     clearStats();
     G.collectStats = false;
+    G.debugMap = {};
 };
 
 const clearStats = function() {
@@ -286,7 +275,6 @@ const getYTicks = function(s, e, l) {
 
 
 const draw = function() {
-    console.log(S.inverseCombinedRotation);
     drawBackground();
     G.config.draw();
 };
@@ -345,6 +333,15 @@ const in3d = function(v) {
         throw new Error('must be 2d or 3d, got ' + v);
     }
 };
+
+const midPoint = function(shape) {
+    var sum = [0, 0, 0];
+    for (var i = 0; i < shape.length; i++) {
+        sum = Mat.addVec(sum, shape[i]);
+    }
+    return Mat.scaleVec(sum, 1 / shape.length);
+};
+
 
 
 const Logical = function(
@@ -549,12 +546,15 @@ const Logical = function(
                     const triangle = triangles[j].mat(verts);
                     const rotated = triangles[j].mat(rotatedVerts);
                     const opt = triangles[j].opts;
-                    const midP = this.midPoint(rotated);
+                    const midP = midPoint(rotated);
 
                     const aRot = Mat.subVec(rotated[1], rotated[0]);
                     const bRot = Mat.subVec(rotated[2], rotated[0]);
                     const rotatedCross = Mat.cross(aRot, bRot);
-                    if (rotatedCross[Z] < 0) {
+                    const visible = rotatedCross[Z] > 0;
+                    const prevVis = G.debugMap[triangles[j].id];
+                    G.debugMap[triangles[j].id] = visible;
+                    if (!visible) {
                         continue;
                     }
 
@@ -564,6 +564,13 @@ const Logical = function(
                 }
             }
             return this.sort(withZ);
+        },
+
+        text: function(pt, txt) {
+            const phys = this.physPoint(pt);
+            if (phys) {
+                physical.text(phys, txt);
+            }
         },
 
         sort: function(withZ) {
@@ -578,14 +585,6 @@ const Logical = function(
             });
 
             return withZ;
-        },
-
-        midPoint: function(shape) {
-            var sum = [0, 0, 0];
-            for (var i = 0; i < shape.length; i++) {
-                sum = Mat.addVec(sum, shape[i]);
-            }
-            return Mat.scaleVec(sum, 1 / shape.length);
         },
 
         /*
@@ -705,6 +704,11 @@ const physical = {
         }
     },
 
+    text: function(pt, txt) {
+        G.ctx.fillStyle = 'white';
+        G.ctx.fillText(txt, pt[X], pt[Y]);
+    },
+
     drawShape: function(pts, color, alpha) {
         var outOfViewCount = 0;
         for (var i = 0; i < pts.length; i++) {
@@ -744,6 +748,7 @@ const setUpCanvas = function() {
     ctx = canvas.getContext('2d');
     G.canvas = canvas;
     G.ctx = ctx;
+    G.ctx.font = '25px sans-serif';
     drawBackground();
 };
 
@@ -785,14 +790,13 @@ function anim() {
     doAnimate(
         function(t) {
             //setState('cam_z', ((1 - t) * 100 - 80));
-            setState('cam_z', (  80 - 80));
+            setState('cam_z',   (1 - t) * 200 - 80);
             setState('beta', t * Math.PI * 0.5);
             //setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
             setState('cam_x', t * 80);
             setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
-            console.log(S.beta);
         },
         100,
         50
