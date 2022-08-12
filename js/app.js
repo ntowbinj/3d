@@ -508,6 +508,23 @@ const Logical = function(
             return ret;
         },
 
+        getAllTrianglesMeshes: function(meshes) {
+            const sorted = this.rotateAndDepthSortMeshes(meshes);
+            const ret = [];
+            for (var i = 0; i < sorted.length; i++) {
+                const triang = sorted[i][1];
+                const abs = triang.map(camera.projectRotated)
+                    .map(camera.uninvert)
+                    .map(physical.relToAbs);
+                const options = sorted[i][2];
+                const result = this.getTriangle(sorted[i][0], abs, options);
+                if (result !== null) {
+                    ret.push(result);
+                }
+            }
+            return ret;
+        },
+
         rotateAndDepthSort: function(trngs) {
             const withZ = [];
             for (var i = 0; i < trngs.length; i++) {
@@ -519,6 +536,30 @@ const Logical = function(
                 const midP = this.midPoint(rotated);
                 if (midP[Z] > -500) {
                     withZ.push([triangle, rotated, opt, midP[Z]]);
+                }
+            }
+            return this.sort(withZ);
+        },
+
+        rotateAndDepthSortMeshes: function(meshes) {
+            const withZ = [];
+            for (var i = 0; i < meshes.length; i++) {
+                const mesh = meshes[i];
+                const verts = mesh.verteces;
+                const triangles = mesh.triangles;
+                const rotatedVerts = Verteces(
+                    verts.vertMatrix.map(this.transform)
+                    .map(camera.translate)
+                    .map(camera.rotate)
+                );
+                for (var j = 0; j < triangles.length; j++) {
+                    const triangle = triangles[j].mat(verts);
+                    const rotated = triangles[j].mat(rotatedVerts);
+                    const opt = triangles[j].opts;
+                    const midP = this.midPoint(rotated);
+                    if (midP[Z] > -500) {
+                        withZ.push([triangle, rotated, opt, midP[Z]]);
+                    }
                 }
             }
             return this.sort(withZ);
@@ -682,7 +723,7 @@ const setUpCanvas = function() {
 
 const drawBackground = function() {
     G.ctx.globalAlpha = 1;
-    G.ctx.fillStyle = 'black';//COLORS.background;
+    G.ctx.fillStyle = '#000010';//COLORS.background;
     G.ctx.fillRect(0, 0, canvas.width, canvas.height);
 };
 
