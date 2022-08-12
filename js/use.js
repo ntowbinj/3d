@@ -2,6 +2,7 @@ const Pictures = function() {
     const logical = Logical(
         transform = function(v) {
             return v;
+            //return Mat.prod([v], Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta))[0];
         }
     );
 
@@ -10,19 +11,13 @@ const Pictures = function() {
     //const shape = icosahedron();
     Math.seedrandom('2');
     const shape = icosahedronMesh({});
-    const shapes = [];
+    let shapes = [];
     var id = 0;
     for (var k = -400; k <= 10; k++) {
         for (var i = -50; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99980) {
-                    const randRot = Mat.prod(
-                        Mat.counterClockXY(randAngle()),
-                        Mat.prod(
-                            Mat.counterClockXZ(randAngle()),
-                            Mat.counterClockYZ(randAngle())
-                        )
-                    );
+                if (Math.random() > 0.99990) {
+                    const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
                     const vertsTrans = Mat.translateRecursive(
                         Mat.scaleRecursive(
                             Mat.prodRecursive(shape.verteces.vertMatrix, randRot),
@@ -39,22 +34,17 @@ const Pictures = function() {
         }
     }
 
-    const randRot = Mat.prod(
-        Mat.counterClockXY(randAngle()),
-        Mat.prod(
-            Mat.counterClockXZ(randAngle()),
-            Mat.counterClockYZ(randAngle())
-        )
-    );
-    const bigOne = icosahedronMesh({color: tinycolor.random()});
+    //const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
+    const bigOne = cube({color: tinycolor.random()});
     const vertsTrans = Mat.translateRecursive(
         Mat.scaleRecursive(
-            Mat.prodRecursive(shape.verteces.vertMatrix, Mat.ident(3)),
-            10
+            Mat.prodRecursive(cube({}).verteces.vertMatrix, Mat.ident(3)),
+            1
         ),
-        [0, 0, -100]
+        [0, 0, 0]
     )
     bigOne.verteces = Verteces(vertsTrans);
+    shapes = []
     shapes.push(bigOne);
 
 

@@ -286,6 +286,7 @@ const getYTicks = function(s, e, l) {
 
 
 const draw = function() {
+    console.log(S.inverseCombinedRotation);
     drawBackground();
     G.config.draw();
 };
@@ -435,6 +436,7 @@ const Logical = function(
             this.drawLine(s, e, w, options);
         },
 
+        /*
         drawShape: function(pts, options = {}) {
             if (!(COLOR in options)) {
                 options[COLOR] = '#FFF';
@@ -447,6 +449,7 @@ const Logical = function(
 
             //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
+        */
 
         // :(
         copyOptions: function(options) {
@@ -473,7 +476,7 @@ const Logical = function(
                 options.alpha = 1.0;
             }
             const hsv = opts.color.toHsl();
-            hsv.l = hsv.l * (0.1 + 0.9 * lightDot);
+            hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
             //options.color = tinycolor(hsv).toString("rgb");
             options.color = hsvToRgb(hsv);
             return [cam, options.color, options.alpha];
@@ -502,6 +505,7 @@ const Logical = function(
             );
         },
 
+        /*
         physPointList: function(vecList) {
             return vecList.map(in3d)
                 .map(this.transform)
@@ -511,6 +515,7 @@ const Logical = function(
                 .map(camera.uninvert)
                 .map(physical.relToAbs);
         },
+        */
 
         getAllTrianglesMeshes: function(meshes) {
             const sorted = this.rotateAndDepthSortMeshes(meshes);
@@ -583,6 +588,7 @@ const Logical = function(
             return Mat.scaleVec(sum, 1 / shape.length);
         },
 
+        /*
         physPointListDebug: function(vecList) {
             const in3dResult = vecList.map(in3d);
             const transformed = in3dResult.map(this.transform);
@@ -593,6 +599,7 @@ const Logical = function(
             const relToAbs = uninverted.map(physical.relToAbs);
             return relToAbs;
         }
+        */
     }
 };
 
@@ -674,6 +681,22 @@ const physical = {
         return [(centerX + pt[X] * 100), (centerY - pt[Y] * 100), 0]
     },
 
+    inView: function(pt) {
+        if (pt[X] < 0) {
+            return false;
+        }
+        if (pt[Y] < 0) {
+            return false;
+        }
+        if (pt[X] > G.canvas.width) {
+            return false;
+        }
+        if (pt[Y] > G.canvas.height) {
+            return false;
+        }
+        return true;
+    },
+
     draw: function(triangs) {
         for (var i = 0; i < triangs.length; i++) {
             let proj, color, alpha;
@@ -683,10 +706,17 @@ const physical = {
     },
 
     drawShape: function(pts, color, alpha) {
+        var outOfViewCount = 0;
         for (var i = 0; i < pts.length; i++) {
             if (pts[i] == null) {
                 return;
             }
+            if (!this.inView(pts[i])) {
+                outOfViewCount++;
+            }
+        }
+        if (outOfViewCount === pts.length) {
+            return;
         }
         G.ctx.strokeStyle = color;
         G.ctx.fillStyle = color;
@@ -754,15 +784,15 @@ const sigmoid = function(s) {
 function anim() {
     doAnimate(
         function(t) {
-            setState('cam_z', ((1 - t) * 200 - 80));
-            setState('beta', -1 * t * 0.02 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 30 - 25));
-            setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
-            setState('cam_y', 20 * sigmoid(t * 50 - 20) + 50 * sigmoid(t * 30 - 20));
-            setState('theta',  Math.PI * 0.2 * sigmoid(t * 40 - 18));
-            setState('cam_x', t * -30);
+            //setState('cam_z', ((1 - t) * 100 - 80));
+            setState('cam_z', (  80 - 80));
+            setState('beta', t * Math.PI * 0.5);
+            //setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
+            setState('cam_x', t * 80);
             setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
+            console.log(S.beta);
         },
         100,
         50
