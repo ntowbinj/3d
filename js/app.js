@@ -550,7 +550,7 @@ const Logical = function(
             const withZ = [];
             for (var i = 0; i < meshes.length; i++) {
                 const mesh = meshes[i];
-                if (!camera.inViewSphere(camera.rotate(camera.translate(mesh.verteces.center)), mesh.verteces.radiusSquared)) {
+                if (!camera.inViewSphere(mesh.verteces)) {
                     continue;
                 }
                 const verts = mesh.verteces;
@@ -653,8 +653,7 @@ const camera = {
         return camera.uninvert(camera.project(pt));
     },
 
-
-    inViewSphere(center, rSquare) {
+    inViewSphereArgs(center, rSquare) {
         const px = S.viewPX;
         const cx = [Math.abs(center[X]), Math.abs(center[Z])];
         if (!this.inViewDir(px, cx, S.sqLenViewPX, rSquare)) {
@@ -664,6 +663,13 @@ const camera = {
         const cy = [Math.abs(center[Y]), Math.abs(center[Z])];
         return this.inViewDir(py, cy, S.sqLenViewPY, rSquare);
 
+    },
+
+    inViewSphere(verteces) {
+        return this.inViewSphereArgs(
+            this.rotate(this.translate(verteces.center)),
+            verteces.radiusSquared
+        );
     },
 
     inViewDir(p, c, pSq, rSquare) {

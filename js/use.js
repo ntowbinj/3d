@@ -83,6 +83,14 @@ const Pictures = function() {
 
             for (var i = 0; i < moving.length; i++) {
                 const toMove = moving[i];
+                const inView = camera.inViewSphere(
+                    toMove.shape.verteces
+                    .translate(Mat.scaleVec(toMove.trans, toMove.transRate * S.t * 1000))
+                    .translate(toMove.baseTrans)
+                );
+                if (!inView) {
+                    continue;
+                }
                 const movedVerts = toMove.shape.verteces.unitaryTransformation(
                     Mat.counterClockXY(Math.PI * S.t * toMove.rotRate * 60)
                 )
