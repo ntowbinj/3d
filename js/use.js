@@ -31,6 +31,43 @@ const Pictures = function() {
             [0, 0, -1]
         )
     );
+    /*
+    cube.push.apply(
+        cube,
+        Mat.translateRecursive(
+            Mat.prodRecursive(
+                face, 
+                Mat.counterClockXZ(0.5 * Math.PI)
+            ),
+            [1, 0, 0]
+        )
+    );
+    */
+    cube.push.apply(
+        cube,
+        Mat.translateRecursive(
+            Mat.prodRecursive(
+                face, 
+                Mat.counterClockYZ(0.5 * Math.PI)
+            ),
+            [0, 0, -1]
+        )
+    );
+    const rotted = Mat.prodRecursive(
+        cube, 
+        Mat.counterClockXZ(Math.PI)
+    );
+    const otherHalf = Mat.translateRecursive(
+        Mat.prodRecursive(
+            rotted,
+            Mat.counterClockYZ(0.5 * Math.PI)
+        ),
+        [1, 1, -1]
+    );
+    cube.push.apply(
+        cube,
+        otherHalf
+    );
     const triangles = [];
     var id = 0;
         /*
