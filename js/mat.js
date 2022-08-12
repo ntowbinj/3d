@@ -194,6 +194,19 @@ const Mat = {
         ]);
     },
 
+    rotMat: function(alpha, beta, theta) {
+        const Rx = Mat.counterClockYZ(alpha);
+        const Ry = Mat.counterClockXZ(beta)
+        const Rz = Mat.counterClockXY(theta);
+        return Mat.prod(
+            Rz,
+            Mat.prod(
+                Rx,
+                Ry
+            )
+        );
+    },
+
     in3dFromXY: function(mat2d) {
         const shape = Mat.shape(mat2d);
         if ((shape[0] != 2) || (shape[1] != 2)) {
