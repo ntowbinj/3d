@@ -835,11 +835,12 @@ const ramp = function(s) {
 
 const anOtherAnimation = function(t) {
     //setState('cam_z', ((1 - t) * 100 - 80));
-    setState('cam_z',   (1 - t) * 450 - 300 + (-170 * ramp(60 * t - 40)));
+    setState('t', t);
+    setState('cam_z',   (1 - sigmoid(5 * t - 3)) * 450 - 300 + (-160 * ramp(60 * t * t * t - 40)));
     setState('beta', sigmoid(t*15 - 5) * Math.PI * 0.3 );
     setState('alpha', sigmoid(t*20 - 10) * Math.PI * -0.05);
     setState('theta', sigmoid(t*20 - 10) * Math.PI * 0.1);
-    setState('cam_x', -100 + sigmoid(t * 5 - 2) * 450 + (-170 * ramp(55 * t - 35)));
+    setState('cam_x', -150 + sigmoid(t * 5 - 2) * 500 + (-160 * ramp(55 * t * t * t - 30)));
     setState('cam_y', sigmoid(t * 20 - 8) * 20);
     setState('focalLength', 22 - 8 * sigmoid(t * 13 - 7));
     updateAndDraw();
@@ -857,7 +858,7 @@ function anim() {
     doAnimate(
         anOtherAnimation,
         150,
-        50
+        40
     );
 }
 
@@ -886,7 +887,7 @@ function startRecording() {
     rec.onstop = e => exportVid(new Blob(chunks, {type: 'video/webm'}));
 
     rec.start();
-    setTimeout(()=>rec.stop(), 10000); // stop recording in 3s
+    setTimeout(()=>rec.stop(), 7000); // stop recording in 3s
 };
 
 function exportVid(blob) {
