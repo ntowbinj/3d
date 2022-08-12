@@ -536,6 +536,11 @@ const Pictures = function() {
             return Mat.addVec([-6, -6], v);
         }
     );
+    const logicalSymm = Logical(
+        transform = function(v) {
+            return Mat.addVec([7, -6], v);
+        }
+    );
 
 
     const width = 7;
@@ -564,30 +569,21 @@ const Pictures = function() {
 
         draw: function() {
             drawBackground();
-            function columnPicture(log) {
-                const axes = getAxes(5);
-                log.drawLineList(axes, 0.7);
-                log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
-                log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                const M = S.A;
-                log.drawVecOrig(M[0], {color: 'white', width: width});
-                log.drawVecOrig(M[1], {color: 'white', width: width});
-            }
 
-            function rowPicture(log) {
+            function picture(log, M, color) {
                 const square = getSquare(6);
-                log.drawShape(square, {color: '#225'});
+                log.drawShape(square, {color: color});
                 const axes = getAxes(5);
                 log.drawLineList(axes, 0.7);
                 log.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 log.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                const M = Mat.trans(S.A);
                 log.drawVecOrig(M[0], {color: 'white', width: width});
                 log.drawVecOrig(M[1], {color: 'white', width: width});
 
             }
-            columnPicture(logicalCol);
-            rowPicture(logicalRow);
+            picture(logicalCol, S.A, COLORS.background);
+            picture(logicalRow, Mat.trans(S.A), '#224');
+            picture(logicalSymm, Mat.prod(S.A, Mat.trans(S.A)), '#242');
 
         }
     }
