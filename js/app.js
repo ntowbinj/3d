@@ -4,6 +4,7 @@ const COLORS = {
 COLOR = "color";
 THICK = "thick";
 DASHED = "dashed";
+WIDTH = "width";
 
 const G = {};
  
@@ -30,7 +31,7 @@ const init = function() {
         getInput('cam_y', 0.5)
     );
     addInput(
-        getInput('cam_z', 0.5)
+        getInput('cam_z', 0.3)
     );
     G.config.init();
 }
@@ -120,6 +121,9 @@ const Logical = function(
             if (!(THICK in options)) {
                 options[THICK] = true;
             }
+            if (!(WIDTH  in options)) {
+                options[WIDTH] = 3;
+            }
             const posVec = Mat.addVec(e, Mat.scaleVec(s, -1));
             const norm = Mat.norm(posVec);
             const length = 0.1 * (1 + Math.log(4 + norm))
@@ -132,7 +136,7 @@ const Logical = function(
                 Mat.addVec(triangIntersectVec, leftAdd),
                 Mat.addVec(triangIntersectVec, rightAdd)
             ];
-            this.drawLine(s, Mat.addVec(e, Mat.scaleVec(segment, -1)), 3, options);
+            this.drawLine(s, Mat.addVec(e, Mat.scaleVec(segment, -1)), options.width, options);
             this.drawShape(triang, options);
         },
 
@@ -388,8 +392,16 @@ const Mat = {
         return ret;
     },
 
+    proj: function(v, w) {
+        return Mat.scaleVec(w, Mat.dot(v, w) / Mat.dot(w, w));
+    },
+
     norm: function(v) {
         return Math.sqrt(Mat.dot(v, v));
+    },
+
+    normed: function(v) {
+        return Mat.scaleVec(v, 1/Mat.norm(v));
     },
 
     convComb: function(A, B, c) {
@@ -436,31 +448,28 @@ const main = function() {
 }
 
 const Pictures = function() {
-    const logical = Logical();
-    const logical2= Logical(
+    const logical = Logical(
         transform = function(v) {
-            return Mat.addVec([-3, 3], Mat.scale(Mat.prod([v], Mat.trans(Mat.orth2(S.o * (2 * Math.PI)))), 0.40)[0]);
-        },
-        transformWidth = function(w) {
-            return w * 0.4;
+            return Mat.prod([v], Mat.trans(Mat.orth2(S.q * 2 * Math.PI)))[0];
         }
     );
     return {
 
         update: function() {
             const shiftScale = function(x) {
-                return 5 * (x - 0.5);
+                return 10 * (x - 0.5);
             }
             const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
-            const B = Mat.trans(Mat.inverse(A));
+            const v = A[0];
+            const w = A[1];
+            const wOrth = Mat.normed(Mat.prod([w], Mat.trans(Mat.orth2(-1 * Math.PI / 2)))[0]);
+            const vSheered = Mat.addVec(v, Mat.scaleVec(wOrth, 20 * (S.s - 0.5)));
+            A[0] = vSheered;
+
             setState('A', A);
-            setState('B', B);
         },
 
         init: function() {
-            addInput(
-                getInput('o', 1)
-            );
             addInput(
                 getInput('a', 1)
             );
@@ -473,6 +482,12 @@ const Pictures = function() {
             addInput(
                 getInput('d', 1)
             );
+            addInput(
+                getInput('s', 0.5)
+            );
+            addInput(
+                getInput('q', 0)
+            );
         },
 
         draw: function() {
@@ -482,16 +497,29 @@ const Pictures = function() {
                 logical.drawLineList(axes, 0.7);
                 logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                for(var i = 0; i < S.A.length; i++) {
-                    logical.drawVecOrig(S.A[i], {color: 'orange'});
-                }
-                for(var i = 0; i < S.B.length; i++) {
-                    logical.drawVecOrig(S.B[i], {color: 'yellow'});
-                }
-                logical.drawDashedLine([0, 0], Mat.scaleVec(S.A[0], 5), 1);
+                logical.drawVecOrig(S.A[0], {color: 'yellow', width: 5});
+                logical.drawVecOrig(S.A[1], {color: 'orange'});
+                const v = S.A[0]
+                const w = S.A[1]
+                const vx = [v[0], 0]
+                const vy = [0, v[1]];
+                const wUnit = Mat.normed(w);
+                const wOrth = Mat.normed(Mat.prod([w], Mat.trans(Mat.orth2(Math.PI / 2)))[0]);
+                const projVxWOrth = Mat.proj(vx, wOrth);
+                const projVyW = Mat.proj(vy, w);
+                const projVySummed = Mat.addVec(projVyW, vx);
+                const projVW = Mat.proj(v, w);
+                logical.drawDashedLine(Mat.scaleVec(w, 10), Mat.scaleVec(w, -10), 1, {color: 'orange'});
+                //logical.drawDashedLine(v, vx, 1);
+                logical.drawVecOrig(vx, {color: 'yellow', width: 1.5});
+                logical.drawVec(vx, v, {color: 'yellow', width: 1.5});
+                logical.drawDashedLine([0, 0], projVxWOrth, 1);
+                logical.drawDashedLine(projVxWOrth, vx, 1);
+                logical.drawDashedLine(vx, projVySummed, 1);
+                logical.drawDashedLine(v, projVySummed, 1);
+                logical.drawDashedLine(projVW, v, 1);
             }
             forAx(logical);
-            forAx(logical2);
         }
     }
 }
@@ -506,7 +534,7 @@ function startRecording() {
     rec.onstop = e => exportVid(new Blob(chunks, {type: 'video/webm'}));
 
     rec.start();
-    setTimeout(()=>rec.stop(), 8000); // stop recording in 3s
+    setTimeout(()=>rec.stop(), 10000); // stop recording in 3s
 }
 
 function exportVid(blob) {
