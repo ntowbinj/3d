@@ -48,13 +48,16 @@ const handleInputChange = function(name, value) {
 
 const init = function() {
     addInput(
+        getInput('t', 0, 1, 0)
+    );
+    addInput(
         getInput('cam_x', -10, 10, 0)
     );
     addInput(
         getInput('cam_y', -10, 10, 0)
     );
     addInput(
-        getInput('cam_z', -200, 200, 40)
+        getInput('cam_z', -200, 200, 0)
     );
     const angleInputs = [
         'Rx',
@@ -798,6 +801,7 @@ const drawBackground = function() {
 const animate = function(f, n, k, r) {
     G.animate = true;
     if (k == n) {
+        console.log('done animating');
         G.animate = false;
         return;
     }
@@ -832,13 +836,13 @@ const ramp = function(s) {
 const anOtherAnimation = function(t) {
     //setState('cam_z', ((1 - t) * 100 - 80));
     setState('t', t);
-    setState('cam_z',   (1 - sigmoid(5 * t - 3)) * 450 - 300 + (-160 * ramp(60 * t * t * t - 40)));
-    setState('Ry', sigmoid(t*15 - 5) * Math.PI * 0.3 );
-    setState('Rx', sigmoid(t*20 - 10) * Math.PI * -0.05);
-    setState('Rz', sigmoid(t*20 - 10) * Math.PI * 0.1);
-    setState('cam_x', -150 + sigmoid(t * 5 - 2) * 500 + (-160 * ramp(55 * t * t * t - 30)));
-    setState('cam_y', sigmoid(t * 20 - 8) * 20);
-    setState('focalLength', 22 - 8 * sigmoid(t * 13 - 7));
+    //setState('cam_z',   (1 - sigmoid(5 * t - 3)) * 450 - 300 + (-160 * ramp(60 * t * t * t - 40)));
+    //setState('Ry', sigmoid(t*15 - 5) * Math.PI * 0.3 );
+    //setState('Rx', sigmoid(t*20 - 10) * Math.PI * -0.05);
+    //setState('Rz', sigmoid(t*20 - 10) * Math.PI * 0.1);
+    //setState('cam_x', -150 + sigmoid(t * 5 - 2) * 500 + (-160 * ramp(55 * t * t * t - 30)));
+    //setState('cam_y', sigmoid(t * 20 - 8) * 20);
+    //setState('focalLength', 22 - 8 * sigmoid(t * 13 - 7));
     updateAndDraw();
 };
 
@@ -853,8 +857,8 @@ function anim() {
     console.log('wunk');
     doAnimate(
         anOtherAnimation,
-        150,
-        40
+        1000,
+        50
     );
 }
 
@@ -872,6 +876,10 @@ const gauss = function(x, d) {
 
 
 function startRecording() {
+    if (G.animate) {
+        console.log('already animating');
+        return;
+    }
     anim();
     return;
     const chunks = []; // here we will store our recorded media chunks (Blobs)

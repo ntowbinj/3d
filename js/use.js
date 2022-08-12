@@ -17,7 +17,7 @@ const Pictures = function() {
     for (var k = -50; k <= 50; k++) {
         for (var i = -30; i <= 30; i++) {
             for (var j = -30; j <= 30; j++) {
-                if (Math.random() > 0.999) {
+                if (Math.random() > 0.9995) {
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
                     const s = Math.max(5, 4 * samplePareto(.001 + Math.random()));
                     const color = tinycolor.random();
@@ -26,7 +26,7 @@ const Pictures = function() {
                         .unitaryTransformation(randRot)
                         .scale(s)
                     id++;
-                    if (Math.random() < 0.95) {
+                    if (Math.random() < 0.55) {
                         vertsTrans = vertsTrans.translate(baseTrans);
                         const newshape = icosahedronMesh({color: color}, id);
                         newshape.verteces = vertsTrans;
@@ -84,21 +84,21 @@ const Pictures = function() {
             for (var i = 0; i < moving.length; i++) {
                 const toMove = moving[i];
                 const movedVerts = toMove.shape.verteces.unitaryTransformation(
-                    Mat.counterClockXY(Math.PI * S.t * toMove.rotRate * 50)
+                    Mat.counterClockXY(Math.PI * S.t * toMove.rotRate * 60)
                 )
                     .unitaryTransformation(toMove.randRot)
-                    .translate(Mat.scaleVec(toMove.trans, toMove.transRate * S.t * 1000))
+                .translate(Mat.scaleVec(toMove.trans, toMove.transRate * S.t * 1000))
                     .translate(toMove.baseTrans);
                 const mesh = icosahedronMesh({color: toMove.color}, toMove.shape.id);
                 mesh.verteces = movedVerts;
                 allShapes.push(mesh);
             }
             const vertsTrans = shape.verteces
-                .unitaryTransformation(Mat.counterClockXY(10 * sigmoid(S.t * 10 - 5)))
+                .unitaryTransformation(Mat.counterClockXY(40 * sigmoid(S.t * 10 - 5)))
                 .unitaryTransformation(randRot)
-                .unitaryTransformation(Mat.counterClockXY(20 * sigmoid(S.t * 15 - 10)))
+                .unitaryTransformation(Mat.counterClockXY(60 * sigmoid(S.t * 15 - 10)))
                 .unitaryTransformation(randRot2)
-                .unitaryTransformation(Mat.counterClockXY(30 * sigmoid(S.t * 20 - 17)))
+                .unitaryTransformation(Mat.counterClockXY(90 * sigmoid(S.t * 20 - 17)))
                 .unitaryTransformation(randRot)
                 .scale(800)
                 .translate([-4000, 0, -4000]);
