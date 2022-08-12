@@ -747,6 +747,7 @@ const gauss = function(x, d) {
 
 function startRecording() {
     anim();
+    return;
     const chunks = []; // here we will store our recorded media chunks (Blobs)
     const stream = canvas.captureStream(); // grab our canvas MediaStream
     const rec = new MediaRecorder(stream); // init the recorder

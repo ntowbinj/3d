@@ -7,74 +7,13 @@ const Pictures = function() {
 
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
-    const base = [[0, 0, 0], [1, 0, 0], [0, 1, 0]];
-    const cube = [];
-    const face = [];
-    face.push(base);
-    face.push(
-        Mat.translateRecursive(
-            Mat.prod(
-                base,
-                Mat.counterClockXY(-1 * Math.PI)
-            ),
-            [1, 1, 0]
-        )
-    );
-    cube.push.apply(cube, face);
-    cube.push.apply(
-        cube,
-        Mat.translateRecursive(
-            Mat.prodRecursive(
-                face, 
-                Mat.counterClockXZ(-0.5 * Math.PI)
-            ),
-            [0, 0, -1]
-        )
-    );
-    /*
-    cube.push.apply(
-        cube,
-        Mat.translateRecursive(
-            Mat.prodRecursive(
-                face, 
-                Mat.counterClockXZ(0.5 * Math.PI)
-            ),
-            [1, 0, 0]
-        )
-    );
-    */
-    cube.push.apply(
-        cube,
-        Mat.translateRecursive(
-            Mat.prodRecursive(
-                face, 
-                Mat.counterClockYZ(0.5 * Math.PI)
-            ),
-            [0, 0, -1]
-        )
-    );
-    const rotted = Mat.prodRecursive(
-        cube, 
-        Mat.counterClockXZ(Math.PI)
-    );
-    const otherHalf = Mat.translateRecursive(
-        Mat.prodRecursive(
-            rotted,
-            Mat.counterClockYZ(0.5 * Math.PI)
-        ),
-        [1, 1, -1]
-    );
-    cube.push.apply(
-        cube,
-        otherHalf
-    );
+    const cb = cube();
     const triangles = [];
     var id = 0;
     for (var k = -200; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
             for (var j = -40; j <= 40; j++) {
                 if (Math.random() > 0.99975) {
-                    const color = tinycolor.random();
                     const randRot = Mat.prod(
                         Mat.counterClockXY(randAngle()),
                         Mat.prod(
@@ -84,11 +23,12 @@ const Pictures = function() {
                     );
                     const theCube = Mat.translateRecursive(
                         Mat.scaleRecursive(
-                            Mat.prodRecursive(cube, randRot),
+                            Mat.prodRecursive(cb, randRot),
                             sampleExp(1, .001 + Math.random())
                         ),
                         [i, j, k]
                     );
+                    const color = tinycolor.random();
                     for (var c = 0; c < theCube.length; c++) {
                         id += 1;
                         triangles.push(
