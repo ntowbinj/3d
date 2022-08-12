@@ -60,9 +60,11 @@ const init = function() {
         'alpha',
         'beta',
         'theta',
+        /*
         'light_alpha',
         'light_beta',
         'light_theta',
+        */
         'trans_alpha',
         'trans_beta',
         'trans_theta'
@@ -196,6 +198,7 @@ const updateCamera = function() {
 };
 
 const updateLight = function() {
+    /*
     setState(
         'lightDir',
         Mat.prod(
@@ -209,7 +212,8 @@ const updateLight = function() {
             )
         )[0]
     );
-    //    setState('lightDir', [0, 0, -1]);
+    */
+    setState('lightDir', [1, 0, 0]);
 };
 
 const toRange = function(s, e, t) {
@@ -473,7 +477,9 @@ const Logical = function(
                 options.alpha = 1.0;
             }
             const hsv = opts.color.toHsl();
-            hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
+            if (!opts.skipLight) {
+                hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
+            }
             //options.color = tinycolor(hsv).toString("rgb");
             options.color = hsvToRgb(hsv);
             return [cam, options.color, options.alpha];
@@ -545,19 +551,27 @@ const Logical = function(
                 for (var j = 0; j < triangles.length; j++) {
                     const triangle = triangles[j].mat(verts);
                     const rotated = triangles[j].mat(rotatedVerts);
-                    const opt = triangles[j].opts;
+                    let opt = triangles[j].opts;
                     const midP = midPoint(rotated);
 
                     const aRot = Mat.subVec(rotated[1], rotated[0]);
                     const bRot = Mat.subVec(rotated[2], rotated[0]);
                     const rotatedCross = Mat.cross(aRot, bRot);
-                    const visible = rotatedCross[Z] > 0;
+                    const rotCrossDot = Mat.dot(rotatedCross, triangle[0]);
+                    const visible = rotCrossDot > 0;
                     const prevVis = G.debugMap[triangles[j].id];
                     G.debugMap[triangles[j].id] = visible;
-                    if (!visible) {
-                        continue;
+                    if (prevVis && !visible) {
+                        console.log(triangles[j].id);
+                        if (triangles[j].id == 38) {
+                            var y = 10;
+                        }
                     }
-
+                    if (!visible) {
+                        opt = this.copyOptions(opt);
+                        opt.color = tinycolor('white');
+                        opt.skipLight = true;
+                    }
                     if (midP[Z] > -5000) {
                         withZ.push([triangle, rotated, opt, midP[Z]]);
                     }
