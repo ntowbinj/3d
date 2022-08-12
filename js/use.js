@@ -16,21 +16,19 @@ const Pictures = function() {
     for (var k = -400; k <= 10; k++) {
         for (var i = -50; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99993) {
+                if (Math.random() > 0.99950) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = 0.5 * samplePareto(.001 + Math.random());
+                    const s = 0.1 * samplePareto(.001 + Math.random());
                     const vertsTrans = shape.verteces
-                    //.unitaryTransformation(randRot)
+                        .unitaryTransformation(randRot)
                         .scale(s)
                         .translate([i, j, k]);
 
                     const color = tinycolor.random();
                     const newshape = icosahedronMesh({color: color}, id);
                     newshape.verteces = vertsTrans;
-                    if (newshape.id == 149) {
-                        shapes.push(newshape);
-                    }
+                    shapes.push(newshape);
                 }
             }
         }
@@ -45,7 +43,6 @@ const Pictures = function() {
         .translate([-12000, 0, -9000]);
         */
 
-    shapes = [];
     const vertsTrans = shape.verteces
         .unitaryTransformation(randRot)
         .scale(16)
@@ -73,11 +70,13 @@ const Pictures = function() {
             const allTriangs = logical.getAllTrianglesMeshes(shapes);
             physical.draw(allTriangs);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
+            /*
             for (var i = 0; i < shapes.length; i++) {
                 const shp = shapes[i];
                 const midp = midPoint(shp.verteces.vertMatrix);
                 logical.text(midp, shp.id);
             }
+            */
         }
     }
 };

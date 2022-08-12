@@ -197,6 +197,8 @@ const updateCamera = function() {
     setState('focPoint', focPoint);
     setState('viewPX', [Math.abs(physical.absToRel([0, 0, 0])[X]), S.focalLength]);
     setState('viewPY', [Math.abs(physical.absToRel([0, 0, 0])[Y]), S.focalLength]);
+    setState('sqLenViewPX', Mat.dot2d(S.viewPX, S.viewPX));
+    setState('sqLenViewPY', Mat.dot2d(S.viewPY, S.viewPY));
     setState('viewH', physical.absToRel([0, 0, 0])[Y]);
 };
 
@@ -540,7 +542,6 @@ const Logical = function(
             for (var i = 0; i < meshes.length; i++) {
                 const mesh = meshes[i];
                 if (!camera.inViewSphere(camera.rotate(camera.translate(mesh.verteces.center)), mesh.verteces.radiusSquared)) {
-                    console.log('out of view');
                     continue;
                 }
                 const verts = mesh.verteces;
@@ -647,22 +648,21 @@ const camera = {
     inViewSphere(center, rSquare) {
         const px = S.viewPX;
         const cx = [Math.abs(center[X]), Math.abs(center[Z])];
-        if (!this.inViewDir(px, cx, rSquare)) {
+        if (!this.inViewDir(px, cx, S.sqLenViewPX, rSquare)) {
             return false;
         }
         const py = S.viewPY;
         const cy = [Math.abs(center[Y]), Math.abs(center[Z])];
-        return this.inViewDir(py, cy, rSquare);
+        return this.inViewDir(py, cy, S.sqLenViewPY, rSquare);
 
     },
 
-    inViewDir(p, c, rSquare) {
+    inViewDir(p, c, pSq, rSquare) {
         const det = Mat.det2([p, c]);
         if (det > 0) {
             return true;
         }
-        const sqDistP = Mat.dot2d(p, p);
-        const sqPerpToView = (det * det) / sqDistP; 
+        const sqPerpToView = (det * det) / pSq;
         return sqPerpToView < rSquare;
     }
 };
@@ -821,14 +821,14 @@ function anim() {
     doAnimate(
         function(t) {
             //setState('cam_z', ((1 - t) * 100 - 80));
-            setState('cam_z',   (1 - t) * 250 - 200);
+            setState('cam_z',   (1 - t) * 50 - 200);
             setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2);
             setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
             setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
             //setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
             setState('cam_x', t * 80);
             setState('cam_y', sigmoid(t * 20 - 15) * 30);
-            //setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
+            setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
             updateAndDraw();
         },
         250,
