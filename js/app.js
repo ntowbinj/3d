@@ -119,7 +119,7 @@ const hsvToRgb = function(hsv) {
             Math.floor(hsv.s),
             function(){return {};}
         ),
-        Math.floor(40 * hsv.l),
+        Math.floor(100 * hsv.l),
         function() {
             return tinycolor(hsv).toString("rgb");
         }
@@ -444,7 +444,7 @@ const Logical = function(
             const a = Mat.subVec(orig[1], orig[0]);
             const b = Mat.subVec(orig[2], orig[0]);
             const cross = Mat.normedCross(a, b);
-            const lightDot = Math.abs(Mat.dot(cross, S.lightDir));
+            const lightDot = Math.max(0, Mat.dot(cross, S.lightDir));
             if (!(COLOR in options)) {
                 options.color = '#FFF';
             }
