@@ -34,7 +34,9 @@ const init = function() {
     addInput(
         get01Input('cam_z', 0.4)
     );
-    G.config.init();
+    for (var i = 0; i < G.config.inputs.length; i++) {
+        addInput(G.config.inputs[i]);
+    }
     G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
     G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
 
@@ -541,6 +543,16 @@ const Pictures = function() {
     );
     return {
 
+        inputs: [
+            get01Input('a', 1),
+            get01Input('b', 0.5),
+            get01Input('c', 0.5),
+            get01Input('d', 1),
+            get01Input('s', 0.5),
+            get01Input('q', 0),
+            get01Input('q_ax', 0)
+        ],
+
         update: function() {
             const shiftScale = function(x) {
                 return 10 * (x - 0.5);
@@ -553,30 +565,6 @@ const Pictures = function() {
             A[0] = vSheered;
 
             setState('A', A);
-        },
-
-        init: function() {
-            addInput(
-                get01Input('a', 1)
-            );
-            addInput(
-                get01Input('b', 0.5)
-            );
-            addInput(
-                get01Input('c', 0.5)
-            );
-            addInput(
-                get01Input('d', 1)
-            );
-            addInput(
-                get01Input('s', 0.5)
-            );
-            addInput(
-                get01Input('q', 0)
-            );
-            addInput(
-                get01Input('q_ax', 0)
-            );
         },
 
         draw: function() {
