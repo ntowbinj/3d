@@ -835,13 +835,13 @@ const ramp = function(s) {
 
 const anOtherAnimation = function(t) {
     //setState('cam_z', ((1 - t) * 100 - 80));
-    setState('cam_z',   (1 - t) * 250 - 200 + (-130 * ramp(60 * t - 40)));
-    setState('beta', sigmoid(t*5 - 2) * Math.PI * 0.4 );
-    //setState('alpha', sigmoid(t*20 - 10) * Math.PI * -0.05);
+    setState('cam_z',   (1 - t) * 350 - 200 + (-160 * ramp(60 * t - 40)));
+    setState('beta', sigmoid(t*8 - 4) * Math.PI * 0.4 );
+    setState('alpha', sigmoid(t*20 - 10) * Math.PI * -0.05);
     setState('theta', sigmoid(t*20 - 10) * Math.PI * 0.1);
-    setState('cam_x', sigmoid(t * 5 - 2) * 320 + (-170 * ramp(60 * t - 40)));
+    setState('cam_x', -100 + sigmoid(t * 5 - 2) * 450 + (-170 * ramp(55 * t - 35)));
     setState('cam_y', sigmoid(t * 20 - 8) * 20);
-    setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
+    setState('focalLength', 22 - 8 * sigmoid(t * 13 - 7));
     updateAndDraw();
 };
 
@@ -853,6 +853,7 @@ const maybeCollectStat = function(k, v) {
 
 
 function anim() {
+    console.log('wunk');
     doAnimate(
         anOtherAnimation,
         150,
