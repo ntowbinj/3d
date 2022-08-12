@@ -821,17 +821,17 @@ function anim() {
     doAnimate(
         function(t) {
             //setState('cam_z', ((1 - t) * 100 - 80));
-            setState('cam_z',   (1 - t) * 50 - 200);
-            setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2);
+            setState('cam_z',   (1 - t) * 250 - 200 + -700 * sigmoid(t * 50 - 40));
+            setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2 + Math.PI * 0.2 * sigmoid(t * 40 - 30));
             setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
             setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
             //setState('alpha', -1 * t * 0.05 * Math.PI * 2 - 0.2 * Math.PI * sigmoid(t * 25 - 20));
-            setState('cam_x', t * 80);
+            setState('cam_x', t * 80 + -800 * sigmoid(t * 70 - 60));
             setState('cam_y', sigmoid(t * 20 - 15) * 30);
             setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
             updateAndDraw();
         },
-        250,
+        150,
         50
     );
 }
