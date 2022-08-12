@@ -2,14 +2,10 @@ const COLORS = {
     'background': '#611'
 }
 
+
 const G = {};
  
 var C;
-
-const init = function() {
-    C = {
-    }
-}
 
 
 const S = {};
@@ -20,27 +16,34 @@ const setState = function(name, value) {
 
 const handleInputChange = function(name, value) {
     setState(name, value);
-    recompute();
+    update();
     draw();
 }
 
-const recompute = function() {
-    const Q = Mat.orth2(S.q * (Math.PI * 2));
-    const B = Mat.mat([[2, 0], [1, 4]]);
-    const D = Mat.mat([[S.d * 2 -1, 0], [0, S.e * 2 - 1]]);
-    const I = Mat.ident(2);
-    const a = S.a;
-    const res = Mat.prod(Q, Mat.prod(Mat.convComb(I, B, a), D));
-    setState('camera_pos', getPoint((S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9));
-    setState('C', res);
-
+const init = function() {
+    addInput(
+        getInput('cam_x', 0.5)
+    );
+    addInput(
+        getInput('cam_y', 0.5)
+    );
+    addInput(
+        getInput('cam_z', 0.5)
+    );
+    G.config.init();
 }
+
+const update = function() {
+    setState('camera_pos', getPoint((S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(3 * S.cam_z) - 0.9));
+    G.config.update();
+}
+
 
 const draw = function() {
     drawBackground();
-    logical.drawVecOrig(Mat.trans(S.C)[0]);
-    logical.drawVecOrig(Mat.trans(S.C)[1]);
+    G.config.draw();
 }
+
 
 const getInput = function(name, initialValue = 0) {
     setState(name, initialValue);
@@ -332,30 +335,45 @@ const Mat = {
 
 
 const main = function() {
-    init();
+    G.config = config1;
     setUpCanvas();
-    addInput(
-        getInput('cam_x', 0.5)
-    );
-    addInput(
-        getInput('cam_y', 0.5)
-    );
-    addInput(
-        getInput('cam_z', 0.5)
-    );
-    addInput(
-        getInput('a')
-    );
-    addInput(
-        getInput('q')
-    );
-    addInput(
-        getInput('d', 1)
-    );
-    addInput(
-        getInput('e', 1)
-    );
-    recompute();
+    init();
+    update();
+    draw();
+}
+
+const config1 = {
+    update: function() {
+        const Q = Mat.orth2(S.q * (Math.PI * 2));
+        const B = Mat.mat([[2, 0], [1, 4]]);
+        const D = Mat.mat([[S.d * 2 -1, 0], [0, S.e * 2 - 1]]);
+        const I = Mat.ident(2);
+        const a = S.a;
+        const res = Mat.prod(Q, Mat.prod(Mat.convComb(I, B, a), D));
+        setState('C', res);
+    },
+
+    init: function() {
+        addInput(
+            getInput('a')
+        );
+        addInput(
+            getInput('q')
+        );
+        addInput(
+            getInput('d', 1)
+        );
+        addInput(
+            getInput('e', 1)
+        );
+    },
+
+    draw: function() {
+        drawBackground();
+        logical.drawVecOrig(Mat.trans(S.C)[0]);
+        logical.drawVecOrig(Mat.trans(S.C)[1]);
+    }
+
 }
 
 window.addEventListener('load', main);
