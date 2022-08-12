@@ -1,0 +1,20 @@
+#ctrl {
+    padding: 2%;
+    float: left;
+    width: 15%;
+}
+
+#output {
+    padding: 2%;
+    float: right;
+    width: 75%;
+}
+
+.inputLabel {
+    font-size: 30;
+    color: #da7;
+}
+
+body {
+    background-color: #622;
+}
