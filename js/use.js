@@ -16,7 +16,7 @@ const Pictures = function() {
     for (var k = -400; k <= 10; k++) {
         for (var i = -50; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99970) {
+                if (Math.random() > 0.99993) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
                     const vertsTrans = Mat.translateRecursive(
@@ -35,16 +35,19 @@ const Pictures = function() {
         }
     }
 
-    //const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-    const bigOne = cube({color: tinycolor.random()});
+    const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
+    //const bigOne = icosahedronMesh({color: tinycolor.random()});
     const vertsTrans = Mat.translateRecursive(
         Mat.scaleRecursive(
-            Mat.prodRecursive(cube({}).verteces.vertMatrix, Mat.ident(3)),
-            1
+            Mat.prodRecursive(shape.verteces.vertMatrix, randRot),
+            1000
         ),
-        [0, 0, 0]
+        [-3000, 0, -4000]
     )
-    bigOne.verteces = Verteces(vertsTrans);
+    const bigOne = Mesh(
+        Verteces(vertsTrans),
+        icoTriangles({color: tinycolor('cyan')})
+    );
     //shapes = []
     shapes.push(bigOne);
 
