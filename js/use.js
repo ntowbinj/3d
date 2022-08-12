@@ -49,7 +49,7 @@ const Pictures = function() {
         vertsTrans,
         icoTriangles({color: tinycolor('cyan')})
     );
-    //shapes = []
+    shapes = []
     shapes.push(bigOne);
 
 
