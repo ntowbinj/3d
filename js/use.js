@@ -18,7 +18,7 @@ const Pictures = function() {
     for (var k = -50; k <= 1; k++) {
         for (var i = -30; i <= 5; i++) {
             for (var j = -10; j <= 10; j++) {
-                if (Math.random() > 0.98) {
+                if (Math.random() > 0.97) {
                     let shapeFunc;
                     let vertsTrans;
                     if (Math.random() > 0.25) {
@@ -35,7 +35,7 @@ const Pictures = function() {
                     } else {
                         s = sampleExp(0.2, Math.random() - 0.001);
                     }
-                    const color = tinycolor.random();
+                    const color = tinycolor.random().toHsl();
                     const baseTrans = [i * 10, j * 10, k * 10];
                     vertsTrans = vertsTrans
                         .unitaryTransformation(randRot)
@@ -79,7 +79,7 @@ const Pictures = function() {
 
 
 
-    const color = tinycolor.random();
+    const color = tinycolor.random().toHsl();
     shuffle(shapes);
     return {
 
@@ -120,13 +120,13 @@ const Pictures = function() {
                 .translate([-4000, 0, -4000]);
             const bigOne = Mesh(
                 vertsTrans,
-                icoTriangles({color: tinycolor('yellow')})
+                icoTriangles({color: tinycolor('yellow').toHsl()})
             );
             allShapes.push(bigOne);
 
             const allTriangs = logical.getAllTrianglesMeshes(allShapes);
             physical.draw(allTriangs);
-            logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
+            //logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
             //const allMoving = logical.
             /*
             for (var i = 0; i < shapes.length; i++) {

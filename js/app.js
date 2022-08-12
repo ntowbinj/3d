@@ -83,7 +83,7 @@ const init = function() {
     }
     G[ORTH90] = Mat.trans(Mat.orth2(Math.PI / 2));
     G[ORTH_NEG90] = Mat.orth2(Math.PI / 2);
-    G.hsvToRgbCache = {};
+    G.hslToRgbCache = {};
     G.timingBuffer = [];
     clearStats();
     G.collectStats = false;
@@ -104,20 +104,20 @@ const getOrDefault = function(m, k, d) {
     return def;
 }
 
-const hsvToRgb = function(hsv) {
+const hslToRgb = function(hsl) {
     return getOrDefault(
         getOrDefault(
             getOrDefault(
-                G.hsvToRgbCache,
-                Math.floor(hsv.h),
+                G.hslToRgbCache,
+                Math.floor(hsl.h),
                 function(){return {};}
             ),
-            Math.floor(hsv.s),
+            Math.floor(hsl.s),
             function(){return {};}
         ),
-        Math.floor(100 * hsv.l),
+        Math.floor(100 * hsl.l),
         function() {
-            return tinycolor(hsv).toString("rgb");
+            return tinycolor(hsl).toString("rgb");
         }
     );
 };
@@ -476,7 +476,6 @@ const Logical = function(
         },
 
         getTriangle: function(orig, proj, cam, opts = {}) {
-            const options = this.copyOptions(opts);
             if (Mat.hasNull(proj)) {
                 return null;
             }
@@ -485,16 +484,23 @@ const Logical = function(
             const b = Mat.subVec(orig[2], orig[0]);
             const cross = Mat.normedCross(a, b);
             const lightDot = Math.max(0, Mat.dot(cross, S.lightDir));
-            if (!(COLOR in options)) {
-                options.color = '#FFF';
+            let color = opts.color;
+            if (!color) {
+                color = tinycolor('#FFF').toHsl();
             }
-            if (!(ALPHA in options)) {
-                options.alpha = 1.0;
+            let alpha = opts.alpha;
+            if (!alpha) {
+                alpha = 1.0;
             }
-            const hsv = opts.color.toHsl();
-            hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
-            options.color = hsvToRgb(hsv);
-            return [cam, options.color, options.alpha];
+            const l = color.l;
+            color = hslToRgb(
+                {
+                    l: l * (0.2 + 0.8 * lightDot),
+                    s: color.s,
+                    h: color.h
+                }
+            );
+            return [cam, color, alpha];
         },
 
 
