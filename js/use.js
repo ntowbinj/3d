@@ -46,7 +46,7 @@ const Pictures = function() {
     const vertsTrans = shape.verteces
         .unitaryTransformation(randRot)
         .scale(100)
-        .translate([-1000, 0, -1000]);
+        .translate([-2000, 0, -2000]);
     const bigOne = Mesh(
         vertsTrans,
         icoTriangles({color: tinycolor('cyan')})
