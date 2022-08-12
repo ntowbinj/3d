@@ -47,7 +47,10 @@ const init = function() {
         get01Input('cam_y', 0.5)
     );
     addInput(
-        getInput('cam_z', -100, 100, 20)
+        getInput('cam_z', -000, 200, 20)
+    );
+    addInput(
+        getInput('t', 0, 1, 0)
     );
     const angleInputs = [
         'alpha',
@@ -73,8 +76,16 @@ const init = function() {
 
 const update = function() {
     //setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(4 * S.cam_z) - 0.9]);
+    const now = Date.now();
+    if (S.lastUpdated > 0 && (now - S.lastUpdated < 50)) {
+        return;
+    }
+    S.lastUpdated = now;
+    setState('cam_z', 400 * (1 - S.t) - 200);
     setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, S.cam_z]);
 
+    setState('beta', Math.PI / 3 * S.t);
+    setState('theta', Math.PI / 2 * S.t);
     setState('Rx', Mat.counterClockYZ(S.alpha));
     setState('Ry', Mat.counterClockXZ(S.beta));
     setState('Rz', Mat.counterClockXY(S.theta));
@@ -198,7 +209,7 @@ const addInput = function(input) {
         }
     });
     $(input.select).slider('value', fromRange(input.s, input.e, S[input.name]) * 100)
-    $(input.select).slider('option', 'step', 0.5);
+    $(input.select).slider('option', 'step', 0.10);
 
 }
 
@@ -305,6 +316,13 @@ const Logical = function(
             physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
 
+
+        drawHollowShape: function(pts, options = {}) {
+            for (var i = 0; i < pts.length; i++) {
+                this.drawLine(pts[i], pts[(i + 1) % pts.length], options);
+            }
+        },
+
         physWidth: function(w, options) {
             return options.thick ? this.transformWidth(Math.max(1.5, w * (1/S.camera_pos[Z]))) : w;
         },
@@ -345,12 +363,19 @@ const camera = {
 
         const unrotatedRay = Mat.prod([ray], S.inverseCombinedRotation)[0];
 
+        if (unrotatedRay[Z] <= 0) {
+            return null;
+        }
+
         const diffX = unrotatedRay[X] * (S.focalLength / unrotatedRay[Z]);
         const diffY = unrotatedRay[Y] * (S.focalLength / unrotatedRay[Z]);
         return [camera_pos[X] + diffX, camera_pos[Y] + diffY, camera_pos[Z]];
     },
 
     uninvert: function(pt) {
+        if (pt === null) {
+            return null;
+        }
         return [-1 * pt[X], -1 * pt[Y], pt[Z]];
     },
 
@@ -363,6 +388,9 @@ const camera = {
 const physical = {
 
     drawLine: function(s, e, w, color, alpha, dashed) {
+        if (s == null || e == null) {
+            return;
+        }
         if (dashed) {
             G.ctx.setLineDash([10, 10]);
         } else {
@@ -384,12 +412,20 @@ const physical = {
     },
 
     relToAbs: function(pt) {
+        if (pt === null) {
+            return null;
+        }
         const centerX = G.canvas.width/2;
         const centerY = G.canvas.height/2;
         return [(centerX + pt[X] * 100), (centerY - pt[Y] * 100), 0]
     },
 
     drawShape: function(pts, color, alpha) {
+        for (var i = 0; i < pts.length; i++) {
+            if (pts[i] == null) {
+                return;
+            }
+        }
         G.ctx.strokeStyle = color;
         G.ctx.fillStyle = color;
         G.ctx.globalAlpha = alpha;
@@ -668,12 +704,23 @@ const Pictures = function() {
     );
     const triang = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
     const triangles = [];
-    for (var i = -10; i <= 10; i++) {
-        for (var j = -10; j <= 10; j++) {
-            for (var k = -10; k <= 10; k++) {
-                //if (Math.random() > 0.95) {
+    const traj = [];
+    for (var k = -40; k <= 10; k++) {
+        for (var i = -10; i <= 10; i++) {
+            for (var j = -10; j <= 10; j++) {
+                if (Math.random() > 0.95) {
                     triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 3), p)));
-                //}
+                    let rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
+                    // hacky :(
+                    if (rand[X] == 0 && rand[Y] == 0 && rand[Z] == 0) {
+                        rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
+                        if (rand[X] == 0 && rand[Y] == 0 && rand[Z] == 0) {
+                            rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
+                        }
+                    }
+                    const small = Mat.scaleVec(Mat.normed(rand), Math.exp(2 * Math.random()));
+                    traj.push(small);
+                }
             }
         }
     }
@@ -685,16 +732,22 @@ const Pictures = function() {
         update: function() {
         },
 
-        colors: ['yellow', 'red', 'blue', 'orange', 'green', 'white'],
+        colors: ['yellow', 'red', 'blue', 'orange', 'green', 'white', 'cyan', 'purple'],
 
         draw: function() {
             drawBackground();
             for (var i = 0; i < triangles.length; i++) {
-            logical.drawShape(triangles[i], {color: this.colors[(i % this.colors.length)]});
+                const shape = triangles[i];
+                let moved = shape;
+                //const moved = shape.map(pt => Mat.addVec(pt, Mat.scaleVec(traj[i], S.t)));
+                logical.drawShape(moved, {color: this.colors[(i % this.colors.length)]});
             }
-            //logical.drawShape(triang);
         }
     }
+}
+
+const animate = function() {
+
 }
 
 function startRecording() {
