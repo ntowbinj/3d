@@ -829,36 +829,32 @@ const sigmoid = function(s) {
     return 1 / (1 + Math.exp(-1 * s));
 }
 
+const ramp = function(s) {
+    return Math.log(Math.exp(s) + 1);
+}
+
 const anOtherAnimation = function(t) {
     //setState('cam_z', ((1 - t) * 100 - 80));
-    setState('cam_z',   (1 - t) * 250 - 200 + (-1400 * sigmoid(t * 50 - 40)));
-    setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2 + Math.PI * 0.2 * sigmoid(t * 40 - 30));
-    setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
-    setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
-    setState('cam_x', t * 80 + (-1600 * sigmoid(t * 70 - 60)));
-    setState('cam_y', sigmoid(t * 20 - 15) * 30);
+    setState('cam_z',   (1 - t) * 250 - 200 + (-130 * ramp(60 * t - 40)));
+    setState('beta', sigmoid(t*5 - 2) * Math.PI * 0.4 );
+    //setState('alpha', sigmoid(t*20 - 10) * Math.PI * -0.05);
+    setState('theta', sigmoid(t*20 - 10) * Math.PI * 0.1);
+    setState('cam_x', sigmoid(t * 5 - 2) * 320 + (-170 * ramp(60 * t - 40)));
+    setState('cam_y', sigmoid(t * 20 - 8) * 20);
     setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
     updateAndDraw();
 };
 
-const anAnimation = function(t) {
-    //setState('cam_z', ((1 - t) * 100 - 80));
-    setState('cam_z',    t * (-200 * sigmoid(t * 10 - 5)));
-    //setState('beta', sigmoid(t*15 - 8) * Math.PI * 0.2 + Math.PI * 0.2 * sigmoid(t * 40 - 30));
-    //setState('beta', Math.PI * 0.2 * sigmoid(t * 30 - 20));
-    //setState('alpha', sigmoid(t*15 - 10) * Math.PI * -0.05);
-    //setState('theta', sigmoid(t*10 - 5) * Math.PI * 0.1);
-    //setState('cam_x', t * 80 + (-1600 * sigmoid(t * 70 - 60)));
-    //setState('cam_x', t * t * t * (-1600 * sigmoid(t * 50 - 40)));
-    //setState('cam_y', sigmoid(t * 20 - 15) * 30);
-    //setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
-    updateAndDraw();
-};
+const maybeCollectStat = function(k, v) {
+    if (G.collectStats) {
+        getOrDefault(G.stats, k, function() { return []; }).push(v);
+    }
+}
 
 
 function anim() {
     doAnimate(
-        anAnimation,
+        anOtherAnimation,
         150,
         50
     );

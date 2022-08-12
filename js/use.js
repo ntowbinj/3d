@@ -13,13 +13,13 @@ const Pictures = function() {
     const shape = icosahedronMesh({});
     let shapes = [];
     var id = 0;
-    for (var k = -400; k <= 10; k++) {
-        for (var i = -50; i <= 50; i++) {
+    for (var k = -500; k <= 10; k++) {
+        for (var i = -400; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99993) {
+                if (Math.random() > 0.99996) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = 0.5 * samplePareto(.001 + Math.random());
+                    const s = 0.6 * samplePareto(.001 + Math.random());
                     const vertsTrans = shape.verteces
                         .unitaryTransformation(randRot)
                         .scale(s)
@@ -45,11 +45,11 @@ const Pictures = function() {
 
     const vertsTrans = shape.verteces
         .unitaryTransformation(randRot)
-        .scale(100)
-        .translate([-2000, 0, -2000]);
+        .scale(800)
+        .translate([-4000, 0, -4000]);
     const bigOne = Mesh(
         vertsTrans,
-        icoTriangles({color: tinycolor('cyan')})
+        icoTriangles({color: tinycolor('yellow')})
     );
     shapes.push(bigOne);
 
