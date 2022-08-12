@@ -11,7 +11,6 @@ const Pictures = function() {
     Math.seedrandom('2');
     const shape = icosahedronMesh({});
     const shapes = [];
-    /*
     var id = 0;
     for (var k = -400; k <= 10; k++) {
         for (var i = -50; i <= 50; i++) {
@@ -47,8 +46,6 @@ const Pictures = function() {
             Mat.counterClockYZ(randAngle())
         )
     );
-    */
-    //const transRot = Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta);
     const bigOne = icosahedronMesh({color: tinycolor.random()});
     const vertsTrans = Mat.translateRecursive(
         Mat.scaleRecursive(
@@ -73,19 +70,6 @@ const Pictures = function() {
         },
 
         draw: function() {
-            const transRot = Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta);
-            const shapes = [];
-            const bigOne = icosahedronMesh({color: color});
-            const vertsTrans = Mat.translateRecursive(
-                Mat.scaleRecursive(
-                    Mat.prodRecursive(shape.verteces.vertMatrix, transRot),
-                    10
-                ),
-                [0, 0, -100]
-            )
-            bigOne.verteces = Verteces(vertsTrans);
-            shapes.push(bigOne);
-
             drawBackground();
             const allTriangs = logical.getAllTrianglesMeshes(shapes);
             physical.draw(allTriangs);
