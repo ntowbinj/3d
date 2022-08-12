@@ -465,17 +465,7 @@ const Logical = function(
 
             const aProj = Mat.subVec(proj[1], proj[0]);
             const bProj = Mat.subVec(proj[2], proj[0]);
-            const projCross = Mat.normedCross(aProj, bProj);
-            if (opts.color.toName() === 'cyan') {
-                console.log('');
-                console.log('aProj');
-                console.log(aProj);
-                console.log('bProj');
-                console.log(bProj);
-                console.log('cross');
-                console.log(projCross);
-                console.log('');
-            }
+            const projCross = Mat.cross(aProj, bProj);
             if (projCross[Z] < 0) {
                 return null;
             }
