@@ -195,6 +195,8 @@ const updateCamera = function() {
     setState('inverseCombinedRotation', Mat.trans(S.combinedRotation));
     const focPoint = [0, 0, -1 * S.focalLength];
     setState('focPoint', focPoint);
+    setState('viewW', physical.absToRel([0, 0, 0])[X]);
+    setState('viewH', physical.absToRel([0, 0, 0])[Y]);
 };
 
 const updateLight = function() {
@@ -536,11 +538,10 @@ const Logical = function(
             const withZ = [];
             for (var i = 0; i < meshes.length; i++) {
                 const mesh = meshes[i];
-                /*
-                if (!camera.inViewSphere(Mat.addVec(mesh.verteces.center, mesh.verteces.radiusSquared))) {
+                if (!camera.inViewSphere(camera.rotate(camera.translate(mesh.verteces.center)), mesh.verteces.radiusSquared)) {
+                    console.log('not in view');
                     continue;
                 }
-                */
                 const verts = mesh.verteces;
                 const triangles = mesh.triangles;
                 const rotatedVerts = Verteces(
@@ -643,7 +644,7 @@ const camera = {
     inViewSphere(center, rSquare) {
         const p = [Math.abs(S.viewW), Math.abs(S.focalLength)];
         const c = [Math.abs(center[X]), Math.abs(center[Z])];
-        const det = Mat.det2(p, c);
+        const det = Mat.det2([p, c]);
         if (det > 0) {
             return true;
         }
@@ -813,8 +814,6 @@ function anim() {
             setState('cam_x', t * 80);
             setState('cam_y', sigmoid(t * 20 - 15) * 30);
             setState('focalLength', 22 - 10 * sigmoid(t * 15 - 6));
-            setState('viewW', physical.absToRel([0, 0, 0])[X]);
-            setState('viewH', physical.absToRel([0, 0, 0])[Y]);
             //setState('focalLength', 22 - 21 * gauss(t * 10 - 5, 4));
             updateAndDraw();
         },
