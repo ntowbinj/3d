@@ -1,8 +1,8 @@
 const Pictures = function() {
     const logical = Logical(
         transform = function(v) {
-            return v;
-            //return Mat.prod([v], Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta))[0];
+            //return v;
+            return Mat.prod([v], Mat.rotMat(S.trans_alpha, S.trans_beta, S.trans_theta))[0];
         }
     );
 
@@ -17,6 +17,7 @@ const Pictures = function() {
         for (var i = -50; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
                 if (Math.random() > 0.99990) {
+                    id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
                     const vertsTrans = Mat.translateRecursive(
                         Mat.scaleRecursive(
@@ -26,7 +27,7 @@ const Pictures = function() {
                         [i, j, k]
                     );
                     const color = tinycolor.random();
-                    const newshapesa = icosahedronMesh({color: color});
+                    const newshapesa = icosahedronMesh({color: color}, id);
                     newshapesa.verteces = Verteces(vertsTrans);
                     shapes.push(newshapesa);
                 }
@@ -44,7 +45,7 @@ const Pictures = function() {
         [0, 0, 0]
     )
     bigOne.verteces = Verteces(vertsTrans);
-    shapes = []
+    //shapes = []
     shapes.push(bigOne);
 
 
@@ -64,6 +65,11 @@ const Pictures = function() {
             const allTriangs = logical.getAllTrianglesMeshes(shapes);
             physical.draw(allTriangs);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
+            for (var i = 0; i < shapes.length; i++) {
+                const shp = shapes[i];
+                const midp = midPoint(shp.verteces.vertMatrix);
+                logical.text(midp, shp.id);
+            }
         }
     }
 };
