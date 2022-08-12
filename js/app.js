@@ -213,7 +213,7 @@ const updateLight = function() {
         )[0]
     );
     */
-    setState('lightDir', [1, 0, 0]);
+    setState('lightDir', [0, 0, 1]);
 };
 
 const toRange = function(s, e, t) {
@@ -477,14 +477,9 @@ const Logical = function(
                 options.alpha = 1.0;
             }
             const hsv = opts.color.toHsl();
-            if (!opts.skipLight) {
-                hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
-            }
-            //options.color = tinycolor(hsv).toString("rgb");
+            hsv.l = hsv.l * (0.2 + 0.8 * lightDot);
             options.color = hsvToRgb(hsv);
             return [cam, options.color, options.alpha];
-
-            //physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
 
 
@@ -557,20 +552,10 @@ const Logical = function(
                     const aRot = Mat.subVec(rotated[1], rotated[0]);
                     const bRot = Mat.subVec(rotated[2], rotated[0]);
                     const rotatedCross = Mat.cross(aRot, bRot);
-                    const rotCrossDot = Mat.dot(rotatedCross, triangle[0]);
-                    const visible = rotCrossDot > 0;
-                    const prevVis = G.debugMap[triangles[j].id];
-                    G.debugMap[triangles[j].id] = visible;
-                    if (prevVis && !visible) {
-                        console.log(triangles[j].id);
-                        if (triangles[j].id == 38) {
-                            var y = 10;
-                        }
-                    }
+                    const rotCrossDot = Mat.dot(rotatedCross, rotated[0]);
+                    const visible = rotCrossDot < 0;
                     if (!visible) {
-                        opt = this.copyOptions(opt);
-                        opt.color = tinycolor('white');
-                        opt.skipLight = true;
+                        continue;
                     }
                     if (midP[Z] > -5000) {
                         withZ.push([triangle, rotated, opt, midP[Z]]);
