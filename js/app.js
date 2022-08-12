@@ -835,8 +835,8 @@ const ramp = function(s) {
 
 const anOtherAnimation = function(t) {
     //setState('cam_z', ((1 - t) * 100 - 80));
-    setState('cam_z',   (1 - t) * 350 - 200 + (-160 * ramp(60 * t - 40)));
-    setState('beta', sigmoid(t*8 - 4) * Math.PI * 0.4 );
+    setState('cam_z',   (1 - t) * 450 - 300 + (-170 * ramp(60 * t - 40)));
+    setState('beta', sigmoid(t*15 - 5) * Math.PI * 0.3 );
     setState('alpha', sigmoid(t*20 - 10) * Math.PI * -0.05);
     setState('theta', sigmoid(t*20 - 10) * Math.PI * 0.1);
     setState('cam_x', -100 + sigmoid(t * 5 - 2) * 450 + (-170 * ramp(55 * t - 35)));

@@ -12,23 +12,33 @@ const Pictures = function() {
     Math.seedrandom('');
     const shape = icosahedronMesh({});
     let shapes = [];
+    let moving = [];
     var id = 0;
     for (var k = -500; k <= 10; k++) {
         for (var i = -300; i <= 50; i++) {
             for (var j = -100; j <= 100; j++) {
+                const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
+                const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
+                const vertsTrans = shape.verteces
+                    .unitaryTransformation(randRot)
+                    .scale(s)
+                    .translate([i, j, k]);
+
+                const color = tinycolor.random();
+                const newshape = icosahedronMesh({color: color}, id);
+                newshape.verteces = vertsTrans;
                 if (Math.random() > 0.99998) {
                     id++;
-                    const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
-                    const vertsTrans = shape.verteces
-                        .unitaryTransformation(randRot)
-                        .scale(s)
-                        .translate([i, j, k]);
-
-                    const color = tinycolor.random();
-                    const newshape = icosahedronMesh({color: color}, id);
-                    newshape.verteces = vertsTrans;
                     shapes.push(newshape);
+                } else if (Math.random() > 0.999995) {
+                    moving.push(
+                        [
+                            newshape,
+                            Math.random(),
+                            [Math.random(), Math.random(), Math.random()],
+                            Mat.rotMat(randAngle(), randAngle(), randAngle())
+                        ]
+                    );
                 }
             }
         }
