@@ -2,7 +2,16 @@ const Mesh = function(verteces, triangles, id = -1) {
     return {
         verteces: verteces,
         triangles: triangles,
-        id: id
+        id: id,
+
+        transform: function(f, id) {
+            return this.withVerts(f(verteces), id);
+        },
+
+        withVerts: function(v, id) {
+            const theId = id || this.id;
+            return Mesh(v, this.triangles, theId);
+        }
     };
 };
 
@@ -91,7 +100,11 @@ const cube = function(opts) {
         [1, 1, 1] // 7
     );
 
-    const verts = Verteces(v);
+    const midp = midPoint(v);
+
+    const verts = Verteces(
+        v.map(p => Mat.subVec(p, midp))
+    );
 
     const t = [];
     t.push(

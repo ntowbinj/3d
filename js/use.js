@@ -9,30 +9,45 @@ const Pictures = function() {
 
     //const base = Mat.scale([[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]], 1);
     //const shape = icosahedron();
-    Math.seedrandom('123');
-    const shape = icosahedronMesh({});
+    Math.seedrandom('10');
+    const baseCube = cube({});
+    const baseIco = icosahedronMesh({});
     let shapes = [];
     let moving = [];
     var id = 0;
     for (var k = -50; k <= 1; k++) {
         for (var i = -30; i <= 5; i++) {
             for (var j = -10; j <= 10; j++) {
-                if (Math.random() > 0.98) {
+                if (Math.random() > 0.95) {
+                    let shapeFunc;
+                    let vertsTrans;
+                    if (Math.random() > 0.25) {
+                        shapeFunc = icosahedronMesh;
+                        vertsTrans = baseIco.verteces;
+                    } else {
+                        shapeFunc = cube;
+                        vertsTrans = baseCube.verteces;
+                    }
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
+                    let s;
+                    if (Math.random() < 0.5) {
+                        s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
+                    } else {
+                        s = sampleExp(0.2, Math.random() - 0.001);
+                    }
                     const color = tinycolor.random();
                     const baseTrans = [i * 10, j * 10, k * 10];
-                    let vertsTrans = shape.verteces
+                    vertsTrans = vertsTrans
                         .unitaryTransformation(randRot)
                         .scale(s)
                     id++;
-                    if (Math.random() < 0.95) {
+                    if (Math.random() < 0.70) {
                         vertsTrans = vertsTrans.translate(baseTrans);
-                        const newshape = icosahedronMesh({color: color}, id);
+                        const newshape = shapeFunc({color: color}, id);
                         newshape.verteces = vertsTrans;
                         shapes.push(newshape);
                     } else {
-                        const newshape = icosahedronMesh({color: color}, id);
+                        const newshape = shapeFunc({color: color}, id);
                         newshape.verteces = vertsTrans;
                         moving.push(
                             {
@@ -89,11 +104,12 @@ const Pictures = function() {
                     .unitaryTransformation(toMove.randRot)
                     .translate(Mat.scaleVec(toMove.trans, toMove.transRate * S.t * 1000))
                     .translate(toMove.baseTrans);
-                const mesh = icosahedronMesh({color: toMove.color}, toMove.shape.id);
-                mesh.verteces = movedVerts;
+                const mesh = toMove.shape.withVerts(movedVerts);
+                //const mesh = cube({color: toMove.color}, toMove.shape.id);
+                //mesh.verteces = movedVerts;
                 allShapes.push(mesh);
             }
-            const vertsTrans = shape.verteces
+            const vertsTrans = baseIco.verteces
                 .unitaryTransformation(Mat.counterClockXY(10 * sigmoid(S.t * 10 - 5)))
                 .unitaryTransformation(randRot)
                 .unitaryTransformation(Mat.counterClockXY(20 * sigmoid(S.t * 15 - 10)))

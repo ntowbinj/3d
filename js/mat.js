@@ -19,6 +19,7 @@ const Mat = {
 
     },
 
+    /*
     prod: function(A, B) {
         const [A_n, A_m] = Mat.shape(A);
         const [B_n, B_m] = Mat.shape(B);
@@ -31,6 +32,23 @@ const Mat = {
             const row = [];
             for (var j = 0; j < B_m; j++) {
                 row.push(Mat.dot(A[i], B_trans[j]));
+            }
+            res.push(row);
+        }
+        return res;
+    },
+    */
+
+    prod: function(A, B) {
+        const res = [];
+        for (var i = 0; i < A.length; i++) {
+            const row = [];
+            for (var j = 0; j < B[0].length; j++) {
+                let dot = 0;
+                for (var k = 0; k < A_m; k++) {
+                    dot += A[i][k] * B[k][j];
+                }
+                row.push(dot);
             }
             res.push(row);
         }
