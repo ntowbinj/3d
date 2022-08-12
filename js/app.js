@@ -5,6 +5,7 @@ COLOR = "color";
 THICK = "thick";
 DASHED = "dashed";
 WIDTH = "width";
+ALPHA = "alpha";
 ORTH90 = "orth90";
 ORTH_NEG90 = "orthNeg90";
 
@@ -174,8 +175,18 @@ const Logical = function(
             if (!(DASHED in options)) {
                 options[DASHED] = false;
             }
+            if (!(ALPHA in options)) {
+                options[ALPHA] = 1.0;
+            }
             const actualWidth = this.physWidth(w, options);
-            physical.drawLine(this.physPoint(s), this.physPoint(e), actualWidth, options.color, options.dashed);
+            physical.drawLine(
+                this.physPoint(s),
+                this.physPoint(e),
+                actualWidth,
+                options.color,
+                options.alpha,
+                options.dashed
+            );
         },
 
         drawDashedLine: function(s, e, w, options = {}) {
@@ -187,7 +198,10 @@ const Logical = function(
             if (!(COLOR in options)) {
                 options[COLOR] = '#FFF';
             }
-            physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color);
+            if (!(ALPHA in options)) {
+                options[ALPHA] = 1.0;
+            }
+            physical.drawShape(pts.map(pt => this.physPoint(pt)), options.color, options.alpha);
         },
 
         physWidth: function(w, options) {
@@ -224,12 +238,13 @@ const camera = {
 
 const physical = {
 
-    drawLine: function(s, e, w, color, dashed) {
+    drawLine: function(s, e, w, color, alpha, dashed) {
         if (dashed) {
             G.ctx.setLineDash([10, 10]);
         } else {
             G.ctx.setLineDash([]);
         }
+        G.ctx.globalAlpha = alpha;
         G.ctx.strokeStyle = color;
         G.ctx.lineWidth = w;
         G.ctx.beginPath();
@@ -253,9 +268,10 @@ const physical = {
         };
     },
 
-    drawShape: function(pts, color) {
+    drawShape: function(pts, color, alpha) {
         G.ctx.strokeStyle = color;
         G.ctx.fillStyle = color;
+        G.ctx.globalAlpha = alpha;
         G.ctx.beginPath();
         G.ctx.moveTo(pts[0].x, pts[0].y);
         for (var i = 1; i < pts.length; i++) {
@@ -283,7 +299,6 @@ const getPoint = function(x, y, z = 0) {
 const setUpCanvas = function() {
     canvas = byId('canvas');
     canvas.width = 4;
-    console.log(canvas.width);
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
     ctx = canvas.getContext('2d');
@@ -303,6 +318,11 @@ const Mat = {
         for (var i = 0; i < arrs.length; i++) {
             if (arrs[i].length != size) {
                 throw new Error('bad shape');
+            }
+            for (var j = 0; j < arrs[i].length; j++) {
+                if (isNaN(arrs[i][j])) {
+                    throw new Error(arrs[i][j] + ' is NaN');
+                }
             }
         }
         return arrs;
@@ -466,84 +486,85 @@ const main = function() {
 }
 
 const Pictures = function() {
-    const logical = Logical(
+    const logical1 = Logical(
         transform = function(v) {
-            return Mat.prod([v], Mat.trans(Mat.orth2(S.q * 2 * Math.PI)))[0];
+            return Mat.addVec([4, 4], v);
         }
     );
     return {
 
         update: function() {
+            const A = [[2, 2], [-4, 1]];
+            const x = [3, 1]
             const shiftScale = function(x) {
                 return 10 * (x - 0.5);
             }
-            const A = [[shiftScale(S.a), shiftScale(S.b)], [shiftScale(S.c), shiftScale(S.d)]]
-            const v = A[0];
-            const w = A[1];
-            const wOrth = Mat.normed(Mat.prod([w], G.orthNeg90)[0]);
-            const vSheered = Mat.addVec(v, Mat.scaleVec(wOrth, 20 * (S.s - 0.5)));
-            A[0] = vSheered;
+            const P1 = [[1, shiftScale(S.p1)], [0, 1]];
+            const P2 = [[1, 0], [shiftScale(S.p2), 1]];
 
+            const A_P1 = Mat.prod(A, P1);
+            const A_P1_P2 = Mat.prod(A_P1, P2);
+
+            const b = Mat.prod([x], A)[0];
+            const b_P1 = Mat.prod([b], P1)[0];
+            const b_P1_P2 = Mat.prod([b_P1], P2)[0];
+
+
+
+            setState('x', x);
+            setState('b', b);
+            setState('b_P1', b_P1);
+            setState('b_P1_P2', b_P1_P2);
             setState('A', A);
+            setState('A_P1', A_P1);
+            setState('A_P1_P2', A_P1_P2);
+            setState('P1', P1);
+            setState('P2', P2);
         },
 
         init: function() {
             addInput(
-                getInput('a', 1)
+                getInput('p1', 0.5)
             );
             addInput(
-                getInput('b', 0.5)
-            );
-            addInput(
-                getInput('c', 0.5)
-            );
-            addInput(
-                getInput('d', 1)
-            );
-            addInput(
-                getInput('s', 0.5)
-            );
-            addInput(
-                getInput('q', 0)
+                getInput('p2', 0.5)
             );
         },
 
         draw: function() {
             drawBackground();
-            const forAx = function(logical) {
+            function columnPicture(logical) {
                 const axes = getAxes(5);
-                const grid = getGrid(5);
+                const grid = getGrid(3);
+                const transGrid = Mat.prod(grid, S.A_P1_P2);
                 logical.drawLineList(axes, 0.7);
-                //logical.drawLineList(grid, 0.4);
+                logical.drawLineList(transGrid, 0.4);
                 logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
                 logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
-                logical.drawVecOrig(S.A[0], {color: 'yellow', width: 5});
-                logical.drawVecOrig(S.A[1], {color: 'orange'});
-                const v = S.A[0]
-                const w = S.A[1]
-                const vx = [v[0], 0]
-                const vy = [0, v[1]];
-                const wUnit = Mat.normed(w);
-                const wOrth = Mat.normed(Mat.prod([w], G.orth90)[0]);
-                const wGrid = Mat.prod(grid, Mat.orth2(Math.asin(wUnit[0])));
-                logical.drawLineList(wGrid, 0.3, {color: 'orange'});
-                const projVxWOrth = Mat.proj(vx, wOrth);
-                const projVxW = Mat.proj(vx, w);
-                const projVyW = Mat.proj(vy, w);
-                const projVySummed = Mat.addVec(projVyW, vx);
-                const projVW = Mat.proj(v, w);
-                logical.drawDashedLine(Mat.scaleVec(w, 10), Mat.scaleVec(w, -10), 1, {color: 'orange'});
-                //logical.drawDashedLine(v, vx, 1);
-                logical.drawVecOrig(vx, {color: 'yellow', width: 1.5});
-                logical.drawVec(vx, v, {color: 'yellow', width: 1.5});
-                logical.drawDashedLine([0, 0], projVxWOrth, 1);
-                logical.drawDashedLine(projVxWOrth, vx, 1);
-                logical.drawDashedLine(projVxW, vx, 1);
-                logical.drawDashedLine(vx, projVySummed, 1);
-                logical.drawDashedLine(v, projVySummed, 1);
-                logical.drawDashedLine(projVW, v, 1);
+                logical.drawVecOrig(S.A[0], {color: 'yellow', alpha: 0.2});
+                logical.drawVecOrig(S.A[1], {color: 'orange', alpha: 0.2});
+                logical.drawVecOrig(S.b, {color: 'pink', alpha: 0.2});
+                logical.drawVecOrig(S.A_P1_P2[0], {color: 'yellow'});
+                logical.drawVecOrig(S.A_P1_P2[1], {color: 'orange'});
+                logical.drawVecOrig(S.b_P1_P2, {color: 'pink'});
             }
-            forAx(logical);
+
+            function rowPicture(logical) {
+                const axes = getAxes(5);
+                const grid = getGrid(5);
+                const transGrid = Mat.prod(grid, S.A_P1_P2);
+                logical.drawLineList(axes, 0.7);
+                logical.drawLineList(transGrid, 0.4);
+                logical.drawLineList(getXTicks(-5, 5, 0.3), 0.7);
+                logical.drawLineList(getYTicks(-5, 5, 0.3), 0.7);
+                logical.drawVecOrig(S.A[0], {color: 'yellow', alpha: 0.2});
+                logical.drawVecOrig(S.A[1], {color: 'orange', alpha: 0.2});
+                logical.drawVecOrig(S.b, {color: 'pink', alpha: 0.2});
+                logical.drawVecOrig(S.A_P1_P2[0], {color: 'yellow'});
+                logical.drawVecOrig(S.A_P1_P2[1], {color: 'orange'});
+                logical.drawVecOrig(S.b_P1_P2, {color: 'pink'});
+            }
+            columnPicture(logical1);
         }
     }
 }
