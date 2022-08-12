@@ -14,23 +14,22 @@ const Pictures = function() {
     let shapes = [];
     let moving = [];
     var id = 0;
-    for (var k = -500; k <= 10; k++) {
-        for (var i = -300; i <= 50; i++) {
-            for (var j = -100; j <= 100; j++) {
-                const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
-                const vertsTrans = shape.verteces
-                    .unitaryTransformation(randRot)
-                    .scale(s)
-                    .translate([i, j, k]);
+    for (var k = -50; k <= 1; k++) {
+        for (var i = -30; i <= 5; i++) {
+            for (var j = -10; j <= 10; j++) {
+                if (Math.random() > 0.98) {
+                    const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
+                    const s = Math.max(0.9, 0.6 * samplePareto(.001 + Math.random()));
+                    const vertsTrans = shape.verteces
+                        .unitaryTransformation(randRot)
+                        .scale(s)
+                        .translate([i * 10, j * 10, k * 10]);
 
-                const color = tinycolor.random();
-                const newshape = icosahedronMesh({color: color}, id);
-                newshape.verteces = vertsTrans;
-                if (Math.random() > 0.99998) {
+                    const color = tinycolor.random();
+                    const newshape = icosahedronMesh({color: color}, id);
+                    newshape.verteces = vertsTrans;
                     id++;
                     shapes.push(newshape);
-                } else if (Math.random() > 0.999995) {
                     moving.push(
                         [
                             newshape,
