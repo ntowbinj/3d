@@ -511,23 +511,6 @@ const Logical = function(
                 .map(physical.relToAbs);
         },
 
-        getAllTriangles: function(trngs) {
-            const sorted = this.rotateAndDepthSort(trngs);
-            const ret = [];
-            for (var i = 0; i < sorted.length; i++) {
-                const triang = sorted[i][1];
-                const abs = triang.map(camera.projectRotated)
-                    .map(camera.uninvert)
-                    .map(physical.relToAbs);
-                const options = sorted[i][2];
-                const result = this.getTriangle(sorted[i][0], abs, options);
-                if (result !== null) {
-                    ret.push(result);
-                }
-            }
-            return ret;
-        },
-
         getAllTrianglesMeshes: function(meshes) {
             const sorted = this.rotateAndDepthSortMeshes(meshes);
             const ret = [];
@@ -543,22 +526,6 @@ const Logical = function(
                 }
             }
             return ret;
-        },
-
-        rotateAndDepthSort: function(trngs) {
-            const withZ = [];
-            for (var i = 0; i < trngs.length; i++) {
-                const triangle = trngs[i].verts;
-                const opt = trngs[i].opts;
-                const rotated = triangle.map(this.transform)
-                    .map(camera.translate)
-                    .map(camera.rotate);
-                const midP = this.midPoint(rotated);
-                if (midP[Z] > -500) {
-                    withZ.push([triangle, rotated, opt, midP[Z]]);
-                }
-            }
-            return this.sort(withZ);
         },
 
         rotateAndDepthSortMeshes: function(meshes) {

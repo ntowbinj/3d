@@ -11,8 +11,6 @@ const Pictures = function() {
     Math.seedrandom('asdf');
     const ico = icosahedronMesh({});
     const icosas = [];
-    const cb = icosahedron();
-    const triangles = [];
     var id = 0;
     for (var k = -200; k <= 10; k++) {
         for (var i = -40; i <= 40; i++) {
@@ -25,13 +23,6 @@ const Pictures = function() {
                             Mat.counterClockYZ(randAngle())
                         )
                     );
-                    const theCube = Mat.translateRecursive(
-                        Mat.scaleRecursive(
-                            Mat.prodRecursive(cb, randRot),
-                            sampleExp(1, .001 + Math.random())
-                        ),
-                        [i, j, k]
-                    );
                     const vertsTrans = Mat.translateRecursive(
                         Mat.scaleRecursive(
                             Mat.prodRecursive(ico.verteces.vertMatrix, randRot),
@@ -43,16 +34,6 @@ const Pictures = function() {
                     const newIcosa = icosahedronMesh({color: color});
                     newIcosa.verteces = Verteces(vertsTrans);
                     icosas.push(newIcosa);
-                    for (var c = 0; c < theCube.length; c++) {
-                        id += 1;
-                        triangles.push(
-                            triang(
-                                theCube[c],
-                                {color: color},
-                                id
-                            )
-                        );
-                    }
                 }
             }
         }
@@ -68,12 +49,7 @@ const Pictures = function() {
 
         draw: function() {
             drawBackground();
-            let allTriangs;
-            if (window.useMesh) {
-                allTriangs = logical.getAllTrianglesMeshes(icosas);
-            } else {
-                allTriangs = logical.getAllTriangles(triangles);
-            }
+            const allTriangs = logical.getAllTrianglesMeshes(icosas);
             physical.draw(allTriangs);
             logical.drawLineList(getAxes3d(5).map(v => Mat.addVec(v, [0, 0, 0])), {color: 'white'});
         }
