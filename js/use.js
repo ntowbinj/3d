@@ -16,10 +16,10 @@ const Pictures = function() {
     for (var k = -400; k <= 10; k++) {
         for (var i = -50; i <= 50; i++) {
             for (var j = -50; j <= 50; j++) {
-                if (Math.random() > 0.99950) {
+                if (Math.random() > 0.99993) {
                     id++;
                     const randRot = Mat.rotMat(randAngle(), randAngle(), randAngle());
-                    const s = 0.1 * samplePareto(.001 + Math.random());
+                    const s = 0.5 * samplePareto(.001 + Math.random());
                     const vertsTrans = shape.verteces
                         .unitaryTransformation(randRot)
                         .scale(s)
@@ -45,8 +45,8 @@ const Pictures = function() {
 
     const vertsTrans = shape.verteces
         .unitaryTransformation(randRot)
-        .scale(16)
-        .translate([46, 0, -201]);
+        .scale(100)
+        .translate([-1000, 0, -1000]);
     const bigOne = Mesh(
         vertsTrans,
         icoTriangles({color: tinycolor('cyan')})
