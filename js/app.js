@@ -47,10 +47,7 @@ const init = function() {
         get01Input('cam_y', 0.5)
     );
     addInput(
-        getInput('cam_z', -000, 200, 20)
-    );
-    addInput(
-        getInput('t', 0, 1, 0)
+        getInput('cam_z', -200, 200, 20)
     );
     const angleInputs = [
         'alpha',
@@ -75,18 +72,18 @@ const init = function() {
 }
 
 const update = function() {
-    //setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, Math.exp(4 * S.cam_z) - 0.9]);
     const now = Date.now();
     if (S.lastUpdated > 0 && (now - S.lastUpdated < 50)) {
         return;
     }
     S.lastUpdated = now;
-    setState('cam_z', 400 * (1 - S.t) - 200);
-    //setState('focalLength', 10 * (1 - S.t) + 0.01);
+    updateCamera();
+    G.config.update();
+}
+
+const updateCamera = function() {
     setState('camera_pos', [(S.cam_x - 0.5) * 10, (S.cam_y - 0.5) * 10, S.cam_z]);
 
-    setState('beta', Math.PI / 4 * S.t);
-    setState('theta', Math.PI / 2 * S.t);
     setState('Rx', Mat.counterClockYZ(S.alpha));
     setState('Ry', Mat.counterClockXZ(S.beta));
     setState('Rz', Mat.counterClockXY(S.theta));
@@ -102,8 +99,14 @@ const update = function() {
         )
     );
     setState('inverseCombinedRotation', Mat.trans(S.combinedRotation));
-
-    G.config.update();
+    const focDir = Mat.prod(
+        [Mat.scaleVec(basis3.k, -1)],
+        S.combinedRotation
+    )[0];
+    const focVec = Mat.scaleVec(focDir, S.focalLength);
+    const focPoint = Mat.addVec(S.camera_pos, focVec);
+    setState('focVec', focVec);
+    setState('focPoint', focPoint);
 }
 
 const toRange = function(s, e, t) {
@@ -353,14 +356,8 @@ const in3d = function(v) {
 const camera = {
 
     project: function(pt) {
-        const focDir = Mat.prod(
-            [Mat.scaleVec(basis3.k, -1)],
-            S.combinedRotation
-        )[0];
-        const focVec = Mat.scaleVec(focDir, S.focalLength);
         const camera_pos = S.camera_pos;
-        const focPoint = Mat.addVec(camera_pos, focVec);
-        const ray = Mat.addVec(focPoint, Mat.scaleVec(pt, -1));
+        const ray = Mat.addVec(S.focPoint, Mat.scaleVec(pt, -1));
 
         const unrotatedRay = Mat.prod([ray], S.inverseCombinedRotation)[0];
 
@@ -697,14 +694,6 @@ const ofPeriod = function(s) {
     return 2 * Math.PI * s;
 }
 
-const sampleExp = function(lambda, x) {
-    return (1/lambda) * Math.log(1 / (1 - x));
-}
-
-const samplePareto = function(x) {
-    return 1 / (Math.pow(x, 1/0.3))
-}
-
 const Pictures = function() {
     const logical = Logical(
         transform = function(v) {
@@ -713,22 +702,11 @@ const Pictures = function() {
     );
     const triang = [[0, 0, 0], [1, 0, 0], [Math.cos(Math.PI / 3), Math.sin(Math.PI / 3), 0]];
     const triangles = [];
-    const traj = [];
-    for (var k = -20; k <= 10; k++) {
+    for (var k = -40; k <= 10; k++) {
         for (var i = -20; i <= 20; i++) {
             for (var j = -20; j <= 20; j++) {
                 if (Math.random() > 0.98) {
                     triangles.push(triang.map(p => Mat.addVec(Mat.scaleVec([i, j, k], 3), p)));
-                    let rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
-                    // hacky :(
-                    if (rand[X] == 0 && rand[Y] == 0 && rand[Z] == 0) {
-                        rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
-                        if (rand[X] == 0 && rand[Y] == 0 && rand[Z] == 0) {
-                            rand = [Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5];
-                        }
-                    }
-                    const small = Mat.scaleVec(Mat.normed(rand), samplePareto(Math.random()));
-                    traj.push(small);
                 }
             }
         }
@@ -747,9 +725,7 @@ const Pictures = function() {
             drawBackground();
             for (var i = 0; i < triangles.length; i++) {
                 const shape = triangles[i];
-                let moved = shape;
-                moved = shape.map(pt => Mat.addVec(pt, Mat.scaleVec(traj[i], S.t)));
-                logical.drawShape(moved, {color: this.colors[(i % this.colors.length)]});
+                logical.drawShape(shape, {color: this.colors[(i % this.colors.length)]});
             }
         }
     }
